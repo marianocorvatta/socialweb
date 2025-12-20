@@ -143,7 +143,7 @@ ${galleryList}
 
 REQUISITOS DE DISEÑO OBLIGATORIOS:
 
-1. ESTÉTICA MODERNA 2024:
+1. ESTÉTICA MODERNA 2025:
    - Diseño minimalista y elegante tipo Squarespace/Wix premium
    - Espaciado generoso (mucho white space)
    - Bordes redondeados sutiles (border-radius: 12-20px)
@@ -158,7 +158,7 @@ REQUISITOS DE DISEÑO OBLIGATORIOS:
    - Usar el color acento solo en CTAs y detalles pequeños
 
 3. TIPOGRAFÍA:
-   - Importar Google Fonts: 'Inter' para texto, 'Playfair Display' para títulos
+   - Importar Google Fonts: 'poppins' para texto, 'Playfair Display' para títulos
    - Títulos: font-weight 600-700, tamaño grande (2.5-4rem)
    - Cuerpo: font-weight 400, tamaño 1rem-1.125rem, line-height 1.6
 
