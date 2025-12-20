@@ -219,7 +219,7 @@ function HomeContent() {
               <button
                 onClick={handleGenerateWebsite}
                 disabled={generating}
-                className="inline-block bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold py-3 px-8 rounded-lg hover:from-green-600 hover:to-teal-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-block bg-linear-to-r from-green-500 to-teal-500 text-white font-semibold py-3 px-8 rounded-lg hover:from-green-600 hover:to-teal-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating ? (
                   <span className="flex items-center gap-2">
