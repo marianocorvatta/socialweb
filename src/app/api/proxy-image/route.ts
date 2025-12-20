@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 // Simple in-memory cache (will reset on server restart, fine for POC)
-const imageCache = new Map<string, { data: Uint8Array; contentType: string; timestamp: number }>();
+const imageCache = new Map<string, { data: ArrayBuffer; contentType: string; timestamp: number }>();
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 // Placeholder SVG for failed images
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const imageUrl = request.nextUrl.searchParams.get("url");
 
   if (!imageUrl) {
-    return new NextResponse(PLACEHOLDER_SVG, {
+    return new Response(PLACEHOLDER_SVG, {
       status: 400,
       headers: { "Content-Type": "image/svg+xml" },
     });
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Check cache
     const cached = imageCache.get(decodedUrl);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return new NextResponse(cached.data, {
+      return new Response(cached.data, {
         status: 200,
         headers: {
           "Content-Type": cached.contentType,
@@ -54,11 +54,10 @@ export async function GET(request: NextRequest) {
 
     const contentType = response.headers.get("Content-Type") || "image/jpeg";
     const arrayBuffer = await response.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
 
     // Cache the image
     imageCache.set(decodedUrl, {
-      data: uint8Array,
+      data: arrayBuffer,
       contentType,
       timestamp: Date.now(),
     });
@@ -69,7 +68,7 @@ export async function GET(request: NextRequest) {
       if (oldestKey) imageCache.delete(oldestKey);
     }
 
-    return new NextResponse(uint8Array, {
+    return new Response(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -78,7 +77,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Proxy image error:", error);
-    return new NextResponse(PLACEHOLDER_SVG, {
+    return new Response(PLACEHOLDER_SVG, {
       status: 200,
       headers: {
         "Content-Type": "image/svg+xml",
