@@ -177,6 +177,8 @@ export async function POST(request: NextRequest) {
 
       // Trigger Vercel deployment if instagramUsername is provided
       let deploymentResult = null;
+      console.log(`📋 Checking deployment conditions - instagramUsername: ${instagramUsername}, VERCEL_TOKEN exists: ${!!process.env.VERCEL_TOKEN}`);
+
       if (instagramUsername) {
         console.log(`🚀 Starting Vercel deployment for branch: ${branchName}, alias: ${instagramUsername}.vercel.app`);
 
@@ -275,12 +277,15 @@ export async function POST(request: NextRequest) {
 
         } catch (deployError) {
           console.error('❌ Error creating Vercel deployment:', deployError);
+          console.error('Error details:', JSON.stringify(deployError, null, 2));
           deploymentResult = {
             initiated: false,
             error: deployError instanceof Error ? deployError.message : 'Unknown deployment error',
             details: deployError,
           };
         }
+      } else {
+        console.log(`⚠️  Skipping Vercel deployment - instagramUsername not provided`);
       }
 
       return NextResponse.json({

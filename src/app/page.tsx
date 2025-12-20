@@ -146,7 +146,8 @@ function HomeContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           branchName: profileData.profile.username,
-          htmlContent: generatedSite.generated_html,
+          instagramUsername: profileData.profile.username,
+          templateCode: generatedSite.generated_html,
         }),
       });
 
@@ -155,7 +156,15 @@ function HomeContent() {
       if (data.error) {
         setPublishError(data.error);
       } else {
-        setPublishSuccess(`¡Publicado exitosamente en la rama ${data.branch}!`);
+        let successMsg = `¡Publicado exitosamente en la rama ${data.branch}!`;
+
+        if (data.deployment?.initiated) {
+          successMsg += `\n\nDeployment iniciado en Vercel:\n- ID: ${data.deployment.deploymentId}\n- URL temporal: ${data.deployment.deploymentURL}\n- Alias esperado: ${data.deployment.expectedAlias}`;
+        } else if (data.deployment?.error) {
+          successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló: ${data.deployment.error}`;
+        }
+
+        setPublishSuccess(successMsg);
       }
     } catch (err) {
       setPublishError(err instanceof Error ? err.message : "Error desconocido");
@@ -422,7 +431,7 @@ function HomeContent() {
               {/* Publish feedback messages */}
               {publishSuccess && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-800 font-medium">{publishSuccess}</p>
+                  <p className="text-green-800 font-medium whitespace-pre-line">{publishSuccess}</p>
                 </div>
               )}
               {publishError && (
