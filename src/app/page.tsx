@@ -64,6 +64,10 @@ function HomeContent() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     if (token && !profileData) {
       setLoading(true);
@@ -127,6 +131,37 @@ function HomeContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handlePublish = async () => {
+    if (!generatedSite || !profileData?.profile.username) return;
+
+    setPublishing(true);
+    setPublishError(null);
+    setPublishSuccess(null);
+
+    try {
+      const response = await fetch("/api/github/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branchName: profileData.profile.username,
+          htmlContent: generatedSite.generated_html,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        setPublishError(data.error);
+      } else {
+        setPublishSuccess(`¡Publicado exitosamente en la rama ${data.branch}!`);
+      }
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const getPreviewUrl = () => {
@@ -342,6 +377,25 @@ function HomeContent() {
                     </svg>
                     Descargar HTML
                   </button>
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {publishing ? (
+                      <>
+                        <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                        Publicando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Publicar
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
               <div className="rounded-xl overflow-hidden shadow-2xl border-4 border-gray-200 bg-white">
@@ -364,6 +418,19 @@ function HomeContent() {
                   title="Website Preview"
                 />
               </div>
+
+              {/* Publish feedback messages */}
+              {publishSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-medium">{publishSuccess}</p>
+                </div>
+              )}
+              {publishError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h3 className="text-red-800 font-semibold mb-2">Error al publicar</h3>
+                  <p className="text-red-600 text-sm">{publishError}</p>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
