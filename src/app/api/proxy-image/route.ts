@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Simple in-memory cache (will reset on server restart, fine for POC)
-const imageCache = new Map<string, { data: Buffer; contentType: string; timestamp: number }>();
+const imageCache = new Map<string, { data: Uint8Array; contentType: string; timestamp: number }>();
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 // Placeholder SVG for failed images
@@ -54,11 +54,11 @@ export async function GET(request: NextRequest) {
 
     const contentType = response.headers.get("Content-Type") || "image/jpeg";
     const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const uint8Array = new Uint8Array(arrayBuffer);
 
     // Cache the image
     imageCache.set(decodedUrl, {
-      data: buffer,
+      data: uint8Array,
       contentType,
       timestamp: Date.now(),
     });
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       if (oldestKey) imageCache.delete(oldestKey);
     }
 
-    return new NextResponse(buffer, {
+    return new NextResponse(uint8Array, {
       status: 200,
       headers: {
         "Content-Type": contentType,
