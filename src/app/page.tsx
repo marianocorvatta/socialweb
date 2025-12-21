@@ -158,10 +158,12 @@ function HomeContent() {
       } else {
         let successMsg = `¡Publicado exitosamente en la rama ${data.branch}!`;
 
-        if (data.deployment?.initiated) {
-          successMsg += `\n\nDeployment iniciado en Vercel:\n- ID: ${data.deployment.deploymentId}\n- URL temporal: ${data.deployment.deploymentURL}\n- Alias esperado: ${data.deployment.expectedAlias}`;
+        if (data.deployment?.success) {
+          successMsg += `\n\n✅ Deployment completado en Vercel:\n- ID: ${data.deployment.deploymentId}\n- URL: ${data.deployment.deploymentURL}\n- Alias: ${data.deployment.alias || data.deployment.expectedAlias}`;
         } else if (data.deployment?.error) {
-          successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló: ${data.deployment.error}`;
+          successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló:\n${data.deployment.error}`;
+        } else if (data.deployment) {
+          successMsg += `\n\n⚠️ Deployment iniciado pero aún no completado`;
         }
 
         setPublishSuccess(successMsg);
