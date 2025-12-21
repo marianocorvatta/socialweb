@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Redirect to home with access_token to fetch full profile
+  // Redirect to profile page with access_token to fetch full profile
   return NextResponse.redirect(
-    `${baseUrl}/?token=${encodeURIComponent(tokenData.access_token)}`
+    `${baseUrl}/profile?token=${encodeURIComponent(tokenData.access_token)}`
   );
 }
