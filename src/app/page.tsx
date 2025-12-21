@@ -45,7 +45,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
 
           {/* Tagline */}
-          <h2 className="text-2xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed">
+          <h2 className="text-2xl font-light text-gray-700 max-w-3xl mx-auto leading-relaxed mt-2">
             Transforma tu perfil de Instagram en un{" "}
             <span className="font-medium bg-linear-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent">
               sitio web profesional

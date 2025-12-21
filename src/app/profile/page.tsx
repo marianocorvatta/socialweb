@@ -9,7 +9,7 @@ import Spinner from "@/components/ui/Spinner";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import ProfileCard from "@/components/profile/ProfileCard";
-import RawDataToggle from "@/components/profile/RawDataToggle";
+// import RawDataToggle from "@/components/profile/RawDataToggle";
 
 function ProfileContent() {
   const searchParams = useSearchParams();
@@ -185,7 +185,7 @@ function ProfileContent() {
               </Alert>
             )}
 
-            <RawDataToggle profileData={profileData} />
+            {/* <RawDataToggle profileData={profileData} /> */}
           </div>
         )}
       </div>
