@@ -169,7 +169,7 @@ REQUISITOS DE DISEÑO OBLIGATORIOS:
    - Imagen de fondo usando la URL del hero proporcionada con overlay oscuro semitransparente (rgba(0,0,0,0.4))
    - Nombre grande centrado en blanco
    - Tagline debajo
-   - Flecha animada indicando scroll (usar CSS animation)
+   - Flecha animada indicando scroll (usar CSS animation) centrada en el medio del viewport
 
    SOBRE MÍ:
    - Layout de dos columnas en desktop (foto perfil a la izquierda, texto a la derecha)
@@ -197,7 +197,7 @@ REQUISITOS DE DISEÑO OBLIGATORIOS:
 
    FOOTER:
    - Simple, fondo oscuro (#1a1a1a), texto gris claro
-   - Copyright con el nombre
+   - Copyright con el nombre con año 2025
    - Link a Instagram
 
 5. RESPONSIVE:
