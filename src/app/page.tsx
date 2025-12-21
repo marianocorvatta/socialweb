@@ -398,6 +398,32 @@ function HomeContent() {
               </div>
             </div>
 
+            {/* Publish feedback messages - MOVED ABOVE PREVIEW */}
+            {publishSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-medium whitespace-pre-line">{publishSuccess}</p>
+                {publishedUrl && (
+                  <a
+                    href={publishedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Ver mi web publicada
+                  </a>
+                )}
+              </div>
+            )}
+            {publishError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="text-red-800 font-semibold mb-2">Error al publicar</h3>
+                <p className="text-red-600 text-sm">{publishError}</p>
+              </div>
+            )}
+
             {/* Preview */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-6">
@@ -466,32 +492,6 @@ function HomeContent() {
                   title="Website Preview"
                 />
               </div>
-
-              {/* Publish feedback messages */}
-              {publishSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                  <p className="text-green-800 font-medium whitespace-pre-line">{publishSuccess}</p>
-                  {publishedUrl && (
-                    <a
-                      href={publishedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-semibold transition-all"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Ver mi web publicada
-                    </a>
-                  )}
-                </div>
-              )}
-              {publishError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h3 className="text-red-800 font-semibold mb-2">Error al publicar</h3>
-                  <p className="text-red-600 text-sm">{publishError}</p>
-                </div>
-              )}
             </div>
 
             {/* Actions */}
