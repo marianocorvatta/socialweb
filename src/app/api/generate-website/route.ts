@@ -40,9 +40,10 @@ interface AnalyzedProfile {
   category: string;
 }
 
-function getProxyUrl(originalUrl: string | null): string {
-  if (!originalUrl) return "";
-  return `/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
+function getDirectUrl(originalUrl: string | null): string {
+  // Use Instagram URLs directly - they work fine in <img> tags
+  // CORS only affects fetch/XHR, not image loading
+  return originalUrl || "";
 }
 
 async function analyzeProfile(
@@ -115,11 +116,11 @@ async function generateHTML(
     .filter((m) => m.media_url && (m.media_type === "IMAGE" || m.media_type === "CAROUSEL_ALBUM"))
     .slice(0, 9);
 
-  const profilePicUrl = getProxyUrl(profile.profile_picture_url);
-  const heroImageUrl = galleryImages[0] ? getProxyUrl(galleryImages[0].media_url) : "";
+  const profilePicUrl = getDirectUrl(profile.profile_picture_url);
+  const heroImageUrl = galleryImages[0] ? getDirectUrl(galleryImages[0].media_url) : "";
 
   const galleryList = galleryImages
-    .map((m, i) => `${i + 1}. URL: ${getProxyUrl(m.media_url)} | Link: ${m.permalink}`)
+    .map((m, i) => `${i + 1}. URL: ${getDirectUrl(m.media_url)} | Link: ${m.permalink}`)
     .join("\n");
 
   const htmlPrompt = `Genera una landing page HTML de ALTA CALIDAD para un portfolio profesional.
@@ -226,7 +227,7 @@ RESPONDE ÚNICAMENTE CON EL CÓDIGO HTML COMPLETO.
 No incluyas explicaciones, comentarios ni markdown.`;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [
       {
         role: "system",
@@ -236,7 +237,7 @@ No incluyas explicaciones, comentarios ni markdown.`;
       { role: "user", content: htmlPrompt },
     ],
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: 8192,
   });
 
   let html = completion.choices[0]?.message?.content || "";
@@ -256,12 +257,16 @@ No incluyas explicaciones, comentarios ni markdown.`;
 }
 
 export async function POST(request: NextRequest) {
+  const totalStart = Date.now();
+
   try {
+    const parseStart = Date.now();
     const body = await request.json();
     const { profile, media } = body as {
       profile: InstagramProfile;
       media: InstagramMedia[];
     };
+    console.log(`⏱️ [1] Parse request body: ${Date.now() - parseStart}ms`);
 
     if (!profile || !media) {
       return NextResponse.json(
@@ -271,6 +276,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Analyze profile with AI
+    const analyzeStart = Date.now();
     let analyzedProfile: AnalyzedProfile;
     try {
       analyzedProfile = await analyzeProfile(profile, media);
@@ -278,9 +284,15 @@ export async function POST(request: NextRequest) {
       console.error("First attempt failed, retrying...", parseError);
       analyzedProfile = await analyzeProfile(profile, media);
     }
+    console.log(`⏱️ [2] Analyze profile (OpenAI gpt-4o-mini): ${Date.now() - analyzeStart}ms`);
 
     // Step 2: Generate HTML with AI
+    const htmlStart = Date.now();
     const generatedHtml = await generateHTML(analyzedProfile, profile, media);
+    console.log(`⏱️ [3] Generate HTML (OpenAI gpt-4o-mini): ${Date.now() - htmlStart}ms`);
+
+    const totalTime = Date.now() - totalStart;
+    console.log(`⏱️ [TOTAL] Generate website completed in: ${totalTime}ms (${(totalTime / 1000).toFixed(1)}s)`);
 
     return NextResponse.json({
       analyzed_profile: analyzedProfile,
@@ -290,6 +302,10 @@ export async function POST(request: NextRequest) {
         media,
       },
       generated_at: new Date().toISOString(),
+      timing: {
+        total_ms: totalTime,
+        total_seconds: (totalTime / 1000).toFixed(1),
+      },
     });
   } catch (err) {
     console.error("Error generating website:", err);

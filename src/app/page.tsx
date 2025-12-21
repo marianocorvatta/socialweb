@@ -67,6 +67,7 @@ function HomeContent() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (token && !profileData) {
@@ -139,6 +140,7 @@ function HomeContent() {
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(null);
+    setPublishedUrl(null);
 
     try {
       const response = await fetch("/api/github/push", {
@@ -159,7 +161,14 @@ function HomeContent() {
         let successMsg = `¡Publicado exitosamente en la rama ${data.branch}!`;
 
         if (data.deployment?.success) {
-          successMsg += `\n\n✅ Deployment completado en Vercel:\n- ID: ${data.deployment.deploymentId}\n- URL: ${data.deployment.deploymentURL}\n- Alias: ${data.deployment.alias || data.deployment.expectedAlias}`;
+          successMsg += `\n\n✅ Deployment completado en Vercel`;
+          // Set the published URL for the button
+          const url = data.deployment.alias
+            ? `https://${data.deployment.alias}`
+            : data.deployment.deploymentURL
+              ? `https://${data.deployment.deploymentURL}`
+              : null;
+          setPublishedUrl(url);
         } else if (data.deployment?.error) {
           successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló:\n${data.deployment.error}`;
         } else if (data.deployment) {
@@ -432,8 +441,21 @@ function HomeContent() {
 
               {/* Publish feedback messages */}
               {publishSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
                   <p className="text-green-800 font-medium whitespace-pre-line">{publishSuccess}</p>
+                  {publishedUrl && (
+                    <a
+                      href={publishedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Ver mi web publicada
+                    </a>
+                  )}
                 </div>
               )}
               {publishError && (
