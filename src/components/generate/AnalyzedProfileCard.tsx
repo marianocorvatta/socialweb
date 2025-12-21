@@ -33,7 +33,7 @@ export default function AnalyzedProfileCard({
         <div>
           <p className="text-sm text-gray-500">Servicios</p>
           <ul className="list-disc list-inside text-gray-700">
-            {analyzedProfile.services.map((s, i) => (
+            {"services" in analyzedProfile && Array.isArray(analyzedProfile.services) && analyzedProfile.services.map((s, i) => (
               <li key={i}>{s}</li>
             ))}
           </ul>
