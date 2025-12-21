@@ -159,7 +159,7 @@ REQUISITOS DE DISEÑO OBLIGATORIOS:
    - Usar el color acento solo en CTAs y detalles pequeños
 
 3. TIPOGRAFÍA:
-   - Importar Google Fonts: 'poppins' para texto, 'Playfair Display' para títulos
+   - Importar Google Fonts: 'poppins' para texto, 'poppins' para títulos
    - Títulos: font-weight 600-700, tamaño grande (2.5-4rem)
    - Cuerpo: font-weight 400, tamaño 1rem-1.125rem, line-height 1.6
 

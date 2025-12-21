@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import simpleGit from "simple-git";
-import { promises as fs } from "fs";
-import path from "path";
-import { tmpdir } from "os";
+import { Octokit } from "@octokit/rest";
 import { Vercel } from "@vercel/sdk";
 
 interface PushRequest {
   branchName: string;
   htmlContent?: string;
   instagramUsername?: string;
-  templateCode?: string; // Template generado por IA
-  overwrite?: boolean; // Si es true, sobrescribe el branch si ya existe
+  templateCode?: string;
+  overwrite?: boolean;
 }
+
+const REPO_OWNER = "marianocorvatta";
+const REPO_NAME = "socialweb-projects";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as PushRequest;
-    const { branchName, htmlContent, instagramUsername, templateCode, overwrite = true } = body;
+    const body = (await request.json()) as PushRequest;
+    const {
+      branchName,
+      htmlContent,
+      instagramUsername,
+      templateCode,
+    } = body;
 
     if (!branchName) {
       return NextResponse.json(
@@ -33,64 +38,314 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Repository configuration
-    const repoUrl = "git@github.com:marianocorvatta/socialweb-projects.git";
+    // Initialize Octokit with GitHub token
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_TOKEN,
+    });
 
-    // Create a unique temporary directory for the clone
-    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const tempDir = path.join(tmpdir(), `repo-${uniqueId}`);
-    const tempKeyDir = path.join(tmpdir(), `keys-${uniqueId}`);
+    console.log(`🚀 Starting GitHub push for branch: ${branchName}`);
 
-    // Create directory for SSH key (separate from repo)
-    await fs.mkdir(tempKeyDir, { recursive: true });
+    // Get the default branch's latest commit SHA
+    const { data: defaultBranch } = await octokit.repos.getBranch({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      branch: "main",
+    });
+    const baseSha = defaultBranch.commit.sha;
+    console.log(`📌 Base commit SHA (main): ${baseSha}`);
 
-    // Setup SSH key - prioritize environment variable over file
-    let deployKeyPath: string;
-    let tempKeyFile = false;
-
-    if (process.env.GITHUB_DEPLOY_KEY) {
-      // Use SSH key from environment variable
-      deployKeyPath = path.join(tempKeyDir, "deploy_key");
-      await fs.writeFile(deployKeyPath, process.env.GITHUB_DEPLOY_KEY, { mode: 0o600 });
-      tempKeyFile = true;
-      console.log("🔑 Using GitHub deploy key from environment variable");
-    } else {
-      // Fallback to local file (for local development)
-      deployKeyPath = path.join(process.cwd(), "github_deploy_key");
-      console.log("🔑 Using GitHub deploy key from local file");
+    // Check if branch already exists
+    let branchExists = false;
+    try {
+      await octokit.repos.getBranch({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        branch: branchName,
+      });
+      branchExists = true;
+      console.log(`📂 Branch ${branchName} already exists`);
+    } catch {
+      console.log(`📂 Branch ${branchName} does not exist, will create it`);
     }
 
-    try {
-      // Configure Git environment for SSH
-      const gitSSHCommand = `ssh -i ${deployKeyPath} -o StrictHostKeyChecking=no`;
-
-      // Initialize git for cloning (without baseDir since directory doesn't exist yet)
-      const git = simpleGit({
-        binary: "git",
-        maxConcurrentProcesses: 1,
+    // Create the branch if it doesn't exist
+    if (!branchExists) {
+      await octokit.git.createRef({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        ref: `refs/heads/${branchName}`,
+        sha: baseSha,
       });
+      console.log(`✅ Created branch: ${branchName}`);
+    }
 
-      // Clone the repository - this creates tempDir
-      await git.env({
-        ...process.env,
-        GIT_SSH_COMMAND: gitSSHCommand,
-      }).clone(repoUrl, tempDir);
+    // Prepare file contents
+    const htmlContentFinal = templateCode || htmlContent || getDefaultHtml();
 
-      // Update git instance to use the cloned repo
-      const repoGit = simpleGit({
-        baseDir: tempDir,
-        binary: "git",
-        maxConcurrentProcesses: 1,
-      }).env({
-        ...process.env,
-        GIT_SSH_COMMAND: gitSSHCommand,
-      });
+    const packageJson = {
+      name: `site-${branchName}`,
+      version: "1.0.0",
+      description: `Static website for ${instagramUsername || branchName}`,
+      scripts: {
+        build: "echo 'No build needed for static site'",
+      },
+      keywords: ["static", "html"],
+      author: instagramUsername || "Warp Agent",
+      license: "MIT",
+    };
 
-      // Create and checkout new branch
-      await repoGit.checkoutLocalBranch(branchName);
+    const vercelConfig = {
+      version: 2,
+      buildCommand: "echo 'Static site - no build needed'",
+      outputDirectory: ".",
+      routes: [
+        {
+          src: "/(.*)",
+          dest: "/index.html",
+        },
+      ],
+    };
 
-      // Use templateCode if provided, otherwise use htmlContent or default
-      const content = templateCode || htmlContent || `<!DOCTYPE html>
+    // Get the current tree SHA for the branch
+    const { data: branchData } = await octokit.repos.getBranch({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      branch: branchName,
+    });
+    const currentCommitSha = branchData.commit.sha;
+
+    // Create blobs for each file
+    const [htmlBlob, packageBlob, vercelBlob] = await Promise.all([
+      octokit.git.createBlob({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        content: Buffer.from(htmlContentFinal).toString("base64"),
+        encoding: "base64",
+      }),
+      octokit.git.createBlob({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        content: Buffer.from(JSON.stringify(packageJson, null, 2)).toString("base64"),
+        encoding: "base64",
+      }),
+      octokit.git.createBlob({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        content: Buffer.from(JSON.stringify(vercelConfig, null, 2)).toString("base64"),
+        encoding: "base64",
+      }),
+    ]);
+
+    console.log(`📄 Created blobs for files`);
+
+    // Create a new tree with the files
+    const { data: newTree } = await octokit.git.createTree({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      base_tree: currentCommitSha,
+      tree: [
+        {
+          path: "index.html",
+          mode: "100644",
+          type: "blob",
+          sha: htmlBlob.data.sha,
+        },
+        {
+          path: "package.json",
+          mode: "100644",
+          type: "blob",
+          sha: packageBlob.data.sha,
+        },
+        {
+          path: "vercel.json",
+          mode: "100644",
+          type: "blob",
+          sha: vercelBlob.data.sha,
+        },
+      ],
+    });
+
+    console.log(`🌳 Created new tree: ${newTree.sha}`);
+
+    // Create a new commit
+    const commitMessage = templateCode
+      ? `Add website generated by AI for ${branchName}\n\nTemplate code generated by AI assistant`
+      : `Add index.html to ${branchName}`;
+
+    const { data: newCommit } = await octokit.git.createCommit({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      message: commitMessage,
+      tree: newTree.sha,
+      parents: [currentCommitSha],
+      author: {
+        name: "Warp Agent",
+        email: "agent@warp.dev",
+        date: new Date().toISOString(),
+      },
+    });
+
+    console.log(`💾 Created commit: ${newCommit.sha}`);
+
+    // Update the branch reference to point to the new commit
+    await octokit.git.updateRef({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      ref: `heads/${branchName}`,
+      sha: newCommit.sha,
+      force: true,
+    });
+
+    console.log(`✅ Updated branch ${branchName} to commit ${newCommit.sha}`);
+
+    // Trigger Vercel deployment if instagramUsername is provided
+    let deploymentResult = null;
+
+    if (instagramUsername && process.env.VERCEL_TOKEN) {
+      console.log(`🚀 Starting Vercel deployment for branch: ${branchName}`);
+
+      try {
+        const vercel = new Vercel({
+          bearerToken: process.env.VERCEL_TOKEN,
+        });
+
+        const projectName = "socialweb-projects";
+        const aliasName = `${instagramUsername}.vercel.app`;
+
+        const createResponse = await vercel.deployments.createDeployment({
+          requestBody: {
+            name: projectName,
+            target: "production",
+            gitSource: {
+              type: "github",
+              repo: REPO_NAME,
+              ref: branchName,
+              org: REPO_OWNER,
+            },
+            projectSettings: {
+              framework: null,
+              devCommand: null,
+              installCommand: null,
+              buildCommand: "echo 'Static site - no build needed'",
+              outputDirectory: ".",
+              rootDirectory: null,
+            },
+          },
+        });
+
+        const deploymentId = createResponse.id;
+        const deploymentURL = createResponse.url;
+
+        console.log(`✅ Deployment created: ${deploymentId}, URL: ${deploymentURL}`);
+
+        // Monitor deployment
+        let deploymentStatus = createResponse.status;
+        const maxAttempts = 60;
+        let attempts = 0;
+
+        while (
+          (deploymentStatus === "BUILDING" ||
+            deploymentStatus === "INITIALIZING" ||
+            deploymentStatus === "QUEUED") &&
+          attempts < maxAttempts
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+
+          const statusResponse = await vercel.deployments.getDeployment({
+            idOrUrl: deploymentId,
+            withGitRepoInfo: "true",
+          });
+
+          deploymentStatus = statusResponse.status;
+          attempts++;
+
+          console.log(`📊 Deployment status (${attempts}/${maxAttempts}): ${deploymentStatus}`);
+        }
+
+        if (deploymentStatus === "READY") {
+          console.log(`🎉 Deployment successful!`);
+
+          try {
+            const aliasResponse = await vercel.aliases.assignAlias({
+              id: deploymentId,
+              requestBody: {
+                alias: aliasName,
+                redirect: null,
+              },
+            });
+
+            console.log(`🔗 Alias assigned: ${aliasResponse.alias}`);
+
+            deploymentResult = {
+              success: true,
+              deploymentId,
+              deploymentURL,
+              status: deploymentStatus,
+              alias: aliasResponse.alias,
+              message: "Deployment completed and alias assigned successfully",
+            };
+          } catch (aliasError) {
+            console.error(`❌ Error assigning alias:`, aliasError);
+            deploymentResult = {
+              success: true,
+              deploymentId,
+              deploymentURL,
+              status: deploymentStatus,
+              message: "Deployment completed but alias assignment failed",
+              aliasError:
+                aliasError instanceof Error
+                  ? aliasError.message
+                  : "Unknown alias error",
+            };
+          }
+        } else if (attempts >= maxAttempts) {
+          deploymentResult = {
+            success: false,
+            deploymentId,
+            deploymentURL,
+            status: deploymentStatus,
+            error: "Deployment timeout",
+          };
+        } else {
+          deploymentResult = {
+            success: false,
+            deploymentId,
+            deploymentURL,
+            status: deploymentStatus,
+            error: `Deployment failed with status: ${deploymentStatus}`,
+          };
+        }
+      } catch (deployError) {
+        console.error("❌ Vercel deployment error:", deployError);
+        deploymentResult = {
+          initiated: false,
+          error:
+            deployError instanceof Error
+              ? deployError.message
+              : "Unknown deployment error",
+        };
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully pushed to branch: ${branchName}`,
+      branch: branchName,
+      repository: `https://github.com/${REPO_OWNER}/${REPO_NAME}`,
+      file: "index.html",
+      commitSha: newCommit.sha,
+      timestamp: new Date().toISOString(),
+      deployment: deploymentResult,
+    });
+  } catch (err) {
+    console.error("Error pushing to GitHub:", err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage, details: err }, { status: 500 });
+  }
+}
+
+function getDefaultHtml(): string {
+  return `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -131,232 +386,4 @@ export async function POST(request: NextRequest) {
     </div>
 </body>
 </html>`;
-
-      // Write the HTML file
-      const htmlFilePath = path.join(tempDir, "index.html");
-      await fs.writeFile(htmlFilePath, content, "utf-8");
-
-      // Create package.json for Vercel static site
-      const packageJson = {
-        name: `site-${branchName}`,
-        version: "1.0.0",
-        description: `Static website for ${instagramUsername || branchName}`,
-        scripts: {
-          build: "echo 'No build needed for static site'"
-        },
-        keywords: ["static", "html"],
-        author: instagramUsername || "Warp Agent",
-        license: "MIT"
-      };
-
-      const packageJsonPath = path.join(tempDir, "package.json");
-      await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), "utf-8");
-
-      // Create vercel.json for static site configuration
-      const vercelConfig = {
-        version: 2,
-        buildCommand: "echo 'Static site - no build needed'",
-        outputDirectory: ".",
-        routes: [
-          {
-            src: "/(.*)",
-            dest: "/index.html"
-          }
-        ]
-      };
-
-      const vercelConfigPath = path.join(tempDir, "vercel.json");
-      await fs.writeFile(vercelConfigPath, JSON.stringify(vercelConfig, null, 2), "utf-8");
-
-      // Add, commit and push
-      await repoGit.add(["index.html", "package.json", "vercel.json"]);
-
-      const commitMessage = templateCode
-        ? `Add website generated by AI for ${branchName}\n\nTemplate code generated by AI assistant`
-        : `Add index.html to ${branchName}`;
-
-      await repoGit.commit(commitMessage, {
-        "--author": '"Warp Agent <agent@warp.dev>"'
-      });
-
-      // Push to remote - use force if overwrite is true
-      if (overwrite) {
-        console.log(`🔄 Force pushing to branch ${branchName} (overwrite mode)`);
-        await repoGit.push("origin", branchName, ["--force"]);
-      } else {
-        await repoGit.push("origin", branchName);
-      }
-
-      // Cleanup temp directories
-      await fs.rm(tempDir, { recursive: true, force: true });
-
-      if (tempKeyFile) {
-        await fs.rm(tempKeyDir, { recursive: true, force: true });
-        console.log("🧹 Cleaned up temporary SSH key file");
-      }
-
-      // Trigger Vercel deployment if instagramUsername is provided
-      let deploymentResult = null;
-      console.log(`📋 Checking deployment conditions - instagramUsername: ${instagramUsername}, VERCEL_TOKEN exists: ${!!process.env.VERCEL_TOKEN}`);
-
-      if (instagramUsername) {
-        console.log(`🚀 Starting Vercel deployment for branch: ${branchName}, alias: ${instagramUsername}.vercel.app`);
-
-        try {
-          // Initialize Vercel SDK
-          const vercel = new Vercel({
-            bearerToken: process.env.VERCEL_TOKEN,
-          });
-
-          // Configuration for the deployment
-          const projectName = "socialweb-projects";
-          const githubRepo = "socialweb-projects";
-          const githubOrg = "marianocorvatta";
-          const aliasName = `${instagramUsername}.vercel.app`;
-
-          console.log(`📦 Creating deployment for ${githubOrg}/${githubRepo}@${branchName}`);
-
-          // Create a new deployment
-          const createResponse = await vercel.deployments.createDeployment({
-            requestBody: {
-              name: projectName,
-              target: "production",
-              gitSource: {
-                type: "github",
-                repo: githubRepo,
-                ref: branchName,
-                org: githubOrg,
-              },
-              projectSettings: {
-                framework: null,
-                devCommand: null,
-                installCommand: null,
-                buildCommand: "echo 'Static site - no build needed'",
-                outputDirectory: ".",
-                rootDirectory: null,
-              },
-            },
-          });
-
-          const deploymentId = createResponse.id;
-          const deploymentURL = createResponse.url;
-
-          console.log(`✅ Deployment created: ID ${deploymentId}, URL: ${deploymentURL}, Status: ${createResponse.status}`);
-
-          // Monitor deployment synchronously (wait for completion)
-          console.log(`⏳ Monitoring deployment ${deploymentId}...`);
-
-          let deploymentStatus = createResponse.status;
-          const maxAttempts = 60; // 5 minutes max
-          let attempts = 0;
-
-          while (
-            (deploymentStatus === "BUILDING" || deploymentStatus === "INITIALIZING" || deploymentStatus === "QUEUED") &&
-            attempts < maxAttempts
-          ) {
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-
-            const statusResponse = await vercel.deployments.getDeployment({
-              idOrUrl: deploymentId,
-              withGitRepoInfo: "true",
-            });
-
-            deploymentStatus = statusResponse.status;
-            attempts++;
-
-            console.log(`📊 Deployment status (attempt ${attempts}/${maxAttempts}): ${deploymentStatus}`);
-          }
-
-          if (deploymentStatus === "READY") {
-            console.log(`🎉 Deployment successful! URL: ${deploymentURL}`);
-
-            // Assign alias
-            try {
-              const aliasResponse = await vercel.aliases.assignAlias({
-                id: deploymentId,
-                requestBody: {
-                  alias: aliasName,
-                  redirect: null,
-                },
-              });
-
-              console.log(`🔗 Alias assigned: ${aliasResponse.alias}`);
-
-              deploymentResult = {
-                success: true,
-                deploymentId,
-                deploymentURL,
-                status: deploymentStatus,
-                alias: aliasResponse.alias,
-                message: "Deployment completed and alias assigned successfully",
-              };
-            } catch (aliasError) {
-              console.error(`❌ Error assigning alias:`, aliasError);
-              deploymentResult = {
-                success: true,
-                deploymentId,
-                deploymentURL,
-                status: deploymentStatus,
-                message: "Deployment completed but alias assignment failed",
-                aliasError: aliasError instanceof Error ? aliasError.message : 'Unknown alias error',
-              };
-            }
-          } else if (attempts >= maxAttempts) {
-            console.error(`⏱️  Deployment timeout - took too long to complete`);
-            deploymentResult = {
-              success: false,
-              deploymentId,
-              deploymentURL,
-              status: deploymentStatus,
-              error: "Deployment timeout - took too long to complete",
-            };
-          } else {
-            console.error(`❌ Deployment failed with status: ${deploymentStatus}`);
-            deploymentResult = {
-              success: false,
-              deploymentId,
-              deploymentURL,
-              status: deploymentStatus,
-              error: `Deployment failed with status: ${deploymentStatus}`,
-            };
-          }
-
-        } catch (deployError) {
-          console.error('❌ Error creating Vercel deployment:', deployError);
-          console.error('Error details:', JSON.stringify(deployError, null, 2));
-          deploymentResult = {
-            initiated: false,
-            error: deployError instanceof Error ? deployError.message : 'Unknown deployment error',
-            details: deployError,
-          };
-        }
-      } else {
-        console.log(`⚠️  Skipping Vercel deployment - instagramUsername not provided`);
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: `Successfully pushed to branch: ${branchName}`,
-        branch: branchName,
-        repository: repoUrl,
-        file: "index.html",
-        timestamp: new Date().toISOString(),
-        deployment: deploymentResult,
-      });
-
-    } catch (gitError) {
-      // Cleanup temp directories on error
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
-      await fs.rm(tempKeyDir, { recursive: true, force: true }).catch(() => {});
-      throw gitError;
-    }
-
-  } catch (err) {
-    console.error("Error pushing to GitHub:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json(
-      { error: errorMessage, details: err },
-      { status: 500 }
-    );
-  }
 }

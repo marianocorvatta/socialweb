@@ -287,7 +287,7 @@ function HomeContent() {
               </button>
               {generating && (
                 <p className="mt-2 text-sm text-gray-500">
-                  Esto puede tardar 10-20 segundos...
+                  Esto puede tardar hasta 1 minuto...
                 </p>
               )}
             </div>
