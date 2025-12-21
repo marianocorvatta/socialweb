@@ -28,17 +28,96 @@ export interface FullProfileData {
   fetched_at: string;
 }
 
-export interface AnalyzedProfile {
+// Category enum for business types
+export enum BusinessCategory {
+  PHOTOGRAPHER = 'photographer',
+  RESTAURANT = 'restaurant',
+  ECOMMERCE = 'ecommerce',
+  PROFESSIONAL_SERVICES = 'professional_services',
+  WELLNESS = 'wellness',
+  CRAFTS = 'crafts',
+  OTHER = 'other'
+}
+
+// Category configuration
+export interface CategoryConfig {
+  id: BusinessCategory;
+  displayName: string;
+  keywords: string[];
+  sections: string[];
+  analysisFields: string[];
+}
+
+// Base profile with common fields
+export interface BaseAnalyzedProfile {
   business_name: string;
   tagline: string;
   bio: string;
-  services: string[];
   keywords_seo: string[];
   locations: string[];
   style: string;
   target_audience: string;
-  category: string;
+  category: BusinessCategory;
 }
+
+// Category-specific profile interfaces
+export interface PhotographerProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.PHOTOGRAPHER;
+  portfolio_focus: string[];
+  packages: string[];
+  specialties: string[];
+}
+
+export interface RestaurantProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.RESTAURANT;
+  cuisine_type: string;
+  menu_highlights: string[];
+  dining_options: string[];
+  price_range: string;
+}
+
+export interface EcommerceProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.ECOMMERCE;
+  product_categories: string[];
+  shipping_info: string;
+  featured_products: string[];
+}
+
+export interface ProfessionalServicesProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.PROFESSIONAL_SERVICES;
+  services_offered: string[];
+  credentials: string[];
+  consultation_type: string;
+}
+
+export interface WellnessProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.WELLNESS;
+  specialties: string[];
+  class_types: string[];
+  certifications: string[];
+}
+
+export interface CraftsProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.CRAFTS;
+  craft_type: string;
+  techniques: string[];
+  custom_orders: boolean;
+}
+
+export interface OtherProfile extends BaseAnalyzedProfile {
+  category: BusinessCategory.OTHER;
+  services: string[];
+}
+
+// Union type for all profile types
+export type AnalyzedProfile = 
+  | PhotographerProfile 
+  | RestaurantProfile 
+  | EcommerceProfile 
+  | ProfessionalServicesProfile
+  | WellnessProfile
+  | CraftsProfile
+  | OtherProfile;
 
 export interface GeneratedWebsite {
   analyzed_profile: AnalyzedProfile;

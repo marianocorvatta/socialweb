@@ -1,44 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { 
+  InstagramProfile, 
+  InstagramMedia, 
+  AnalyzedProfile,
+  BusinessCategory 
+} from "@/types/instagram";
+import { 
+  CATEGORY_CONFIGS, 
+  detectCategory, 
+  getCategoryAnalysisPrompt 
+} from "@/config/categories";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-interface InstagramProfile {
-  user_id: string | null;
-  username: string | null;
-  name: string | null;
-  biography: string | null;
-  website: string | null;
-  profile_picture_url: string | null;
-  followers_count: number | null;
-  follows_count: number | null;
-  media_count: number | null;
-  account_type: string | null;
-}
-
-interface InstagramMedia {
-  id: string;
-  caption: string | null;
-  media_type: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
-  media_url: string | null;
-  thumbnail_url: string | null;
-  permalink: string | null;
-  timestamp: string | null;
-}
-
-interface AnalyzedProfile {
-  business_name: string;
-  tagline: string;
-  bio: string;
-  services: string[];
-  keywords_seo: string[];
-  locations: string[];
-  style: string;
-  target_audience: string;
-  category: string;
-}
 
 function getDirectUrl(originalUrl: string | null): string {
   // Use Instagram URLs directly - they work fine in <img> tags
@@ -50,6 +26,17 @@ async function analyzeProfile(
   profile: InstagramProfile,
   media: InstagramMedia[]
 ): Promise<AnalyzedProfile> {
+  // Pre-detect category using keyword-based detection
+  const captions = media.slice(0, 15).map(m => m.caption || '').filter(Boolean);
+  const detectedCategory = detectCategory(
+    profile.biography || '',
+    captions,
+    profile.account_type
+  );
+  
+  const categoryConfig = CATEGORY_CONFIGS[detectedCategory];
+  const categoryFieldsExample = getCategoryAnalysisPrompt(detectedCategory);
+
   const systemPrompt = `Eres un experto en marketing digital y análisis de perfiles de redes sociales.
 Tu tarea es analizar datos de Instagram y crear un perfil de negocio/creador completo.
 Responde SOLO en formato JSON válido, sin markdown ni explicaciones.`;
@@ -79,13 +66,18 @@ Genera un JSON con esta estructura exacta:
   "business_name": "nombre del negocio o nombre artístico",
   "tagline": "frase corta que describe lo que hace (máximo 10 palabras)",
   "bio": "descripción profesional de 2-3 oraciones",
-  "services": ["servicio 1", "servicio 2", "servicio 3"],
   "keywords_seo": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "locations": ["ubicación 1", "ubicación 2"],
   "style": "descripción del estilo visual/artístico en una oración",
   "target_audience": "descripción del público objetivo",
-  "category": "categoría principal (ej: Fotografía, Gastronomía, Moda, Arte, etc)"
-}`;
+  "category": "MUST be exactly one of: 'photographer', 'restaurant', 'ecommerce', 'professional_services', 'wellness', 'crafts', 'other'",
+${categoryFieldsExample}
+}
+
+IMPORTANTE: 
+- El campo "category" debe ser exactamente uno de los valores especificados en inglés.
+- Basándote en el análisis, este perfil parece ser de tipo: ${categoryConfig.displayName}
+- Incluye los campos adicionales específicos para esta categoría como se muestra arriba.`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -103,7 +95,15 @@ Genera un JSON con esta estructura exacta:
     .replace(/```\n?/g, "")
     .trim();
 
-  return JSON.parse(cleanedResponse) as AnalyzedProfile;
+  const parsed = JSON.parse(cleanedResponse);
+  
+  // Validate category - if invalid, use our detected category
+  if (!Object.values(BusinessCategory).includes(parsed.category)) {
+    console.warn(`Invalid category returned by AI: ${parsed.category}, using detected: ${detectedCategory}`);
+    parsed.category = detectedCategory;
+  }
+
+  return parsed as AnalyzedProfile;
 }
 
 async function generateHTML(
