@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useInstagramStore } from "@/store/useInstagramStore";
 
-interface SidebarProps {
-  hasGeneratedSite: boolean;
-}
-
-export default function Sidebar({ hasGeneratedSite }: SidebarProps) {
+export default function Sidebar() {
   const pathname = usePathname();
+  const generatedSite = useInstagramStore((state) => state.generatedSite);
+  const hasGeneratedSite = !!generatedSite;
 
   const navItems = [
     {

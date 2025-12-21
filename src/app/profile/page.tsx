@@ -2,7 +2,8 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { FullProfileData, GeneratedWebsite } from "@/types/instagram";
+import { GeneratedWebsite } from "@/types/instagram";
+import { useInstagramStore } from "@/store/useInstagramStore";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Spinner from "@/components/ui/Spinner";
 import Alert from "@/components/ui/Alert";
@@ -15,63 +16,36 @@ function ProfileContent() {
   const router = useRouter();
   const tokenFromUrl = searchParams.get("token");
 
-  const [profileData, setProfileData] = useState<FullProfileData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  // Zustand store
+  const {
+    token,
+    profileData,
+    isLoadingProfile,
+    setToken,
+    refreshProfile,
+  } = useInstagramStore();
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
-  // Check if user has generated site
-  const [hasGeneratedSite, setHasGeneratedSite] = useState(false);
-
-  // Get token from URL or sessionStorage
-  const [token, setToken] = useState<string | null>(null);
-
+  // Save token from URL to store
   useEffect(() => {
-    const stored = sessionStorage.getItem("generatedSite");
-    setHasGeneratedSite(!!stored);
-  }, []);
-
-  // Save token to sessionStorage and retrieve it
-  useEffect(() => {
-    if (tokenFromUrl) {
-      // Save token from URL to sessionStorage
-      sessionStorage.setItem("instagram_token", tokenFromUrl);
+    if (tokenFromUrl && tokenFromUrl !== token) {
       setToken(tokenFromUrl);
-    } else {
-      // Try to get token from sessionStorage
-      const storedToken = sessionStorage.getItem("instagram_token");
-      if (storedToken) {
-        setToken(storedToken);
-      } else {
-        // No token available, redirect to home
-        router.push("/?error=" + encodeURIComponent("No authentication token"));
-      }
+    } else if (!tokenFromUrl && !token) {
+      router.push("/?error=" + encodeURIComponent("No authentication token"));
     }
-  }, [tokenFromUrl, router]);
+  }, [tokenFromUrl, token, setToken, router]);
 
-  // Fetch profile data
+  // Fetch profile data if we have token but no profile data
   useEffect(() => {
-    if (token && !profileData) {
-      setLoading(true);
-      fetch(`/api/instagram/full-profile?access_token=${encodeURIComponent(token)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            setFetchError(data.error);
-          } else {
-            setProfileData(data);
-          }
-        })
-        .catch((err) => {
-          setFetchError(err.message);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (token && !profileData && !isLoadingProfile) {
+      refreshProfile(token).catch((err) => {
+        setFetchError(err.message);
+      });
     }
-  }, [token, profileData]);
+  }, [token, profileData, isLoadingProfile, refreshProfile]);
 
   const handleGenerateWebsite = async () => {
     if (!profileData) return;
@@ -89,14 +63,13 @@ function ProfileContent() {
         }),
       });
 
-      const data: GeneratedWebsite = await response.json();
+      const data: GeneratedWebsite | { error: string } = await response.json();
 
-      if ((data as any).error) {
-        setGenerateError((data as any).error);
+      if ("error" in data) {
+        setGenerateError(data.error);
       } else {
-        // Save to sessionStorage
-        sessionStorage.setItem("generatedSite", JSON.stringify(data));
-        sessionStorage.setItem("profileData", JSON.stringify(profileData));
+        // Save to Zustand store
+        useInstagramStore.getState().setGeneratedSite(data);
 
         // Navigate to generate page
         router.push("/generate");
@@ -108,13 +81,24 @@ function ProfileContent() {
     }
   };
 
+  const handleRefreshProfile = async () => {
+    if (!token) return;
+
+    setFetchError(null);
+    try {
+      await refreshProfile(token);
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : "Error al actualizar");
+    }
+  };
+
   if (!token) {
     return null; // Will redirect
   }
 
-  if (loading) {
+  if (isLoadingProfile && !profileData) {
     return (
-      <ProtectedLayout hasGeneratedSite={hasGeneratedSite}>
+      <ProtectedLayout>
         <div className="flex items-center justify-center min-h-screen">
           <Spinner size="md" message="Cargando datos de Instagram..." />
         </div>
@@ -123,15 +107,37 @@ function ProfileContent() {
   }
 
   return (
-    <ProtectedLayout hasGeneratedSite={hasGeneratedSite}>
+    <ProtectedLayout>
       <div className="p-8 max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">
-            Tu Perfil
-          </h1>
-          <p className="text-gray-500 font-light">
-            Información de tu cuenta de Instagram
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">
+              Tu Perfil
+            </h1>
+            <p className="text-gray-500 font-light">
+              Información de tu cuenta de Instagram
+            </p>
+          </div>
+          <button
+            onClick={handleRefreshProfile}
+            disabled={isLoadingProfile}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-light text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg
+              className={`w-4 h-4 ${isLoadingProfile ? "animate-spin" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {isLoadingProfile ? "Actualizando..." : "Actualizar datos"}
+          </button>
         </div>
 
         {fetchError && (

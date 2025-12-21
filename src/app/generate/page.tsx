@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FullProfileData, GeneratedWebsite } from "@/types/instagram";
+import { useInstagramStore } from "@/store/useInstagramStore";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import AnalyzedProfileCard from "@/components/generate/AnalyzedProfileCard";
 import BrowserPreview from "@/components/generate/BrowserPreview";
@@ -11,27 +11,20 @@ import ActionButtons from "@/components/generate/ActionButtons";
 export default function GeneratePage() {
   const router = useRouter();
 
-  const [profileData, setProfileData] = useState<FullProfileData | null>(null);
-  const [generatedSite, setGeneratedSite] = useState<GeneratedWebsite | null>(null);
+  // Zustand store
+  const { profileData, generatedSite, clearAll } = useInstagramStore();
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
-  // Load data from sessionStorage
+  // Redirect if no generated site
   useEffect(() => {
-    const storedSite = sessionStorage.getItem("generatedSite");
-    const storedProfile = sessionStorage.getItem("profileData");
-
-    if (!storedSite || !storedProfile) {
+    if (!generatedSite || !profileData) {
       router.push("/profile");
-      return;
     }
-
-    setGeneratedSite(JSON.parse(storedSite));
-    setProfileData(JSON.parse(storedProfile));
-  }, [router]);
+  }, [generatedSite, profileData, router]);
 
   const getPreviewUrl = () => {
     if (!generatedSite) return "";
@@ -111,7 +104,7 @@ export default function GeneratePage() {
   };
 
   const handleConnectAnother = () => {
-    sessionStorage.clear();
+    clearAll(); // Clear Zustand store
     router.push("/");
   };
 
@@ -120,7 +113,7 @@ export default function GeneratePage() {
   }
 
   return (
-    <ProtectedLayout hasGeneratedSite={true}>
+    <ProtectedLayout>
       <div className="p-8 max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">

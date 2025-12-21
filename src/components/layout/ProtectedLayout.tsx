@@ -5,13 +5,9 @@ import Sidebar from "./Sidebar";
 
 interface ProtectedLayoutProps {
   children: ReactNode;
-  hasGeneratedSite?: boolean;
 }
 
-export default function ProtectedLayout({
-  children,
-  hasGeneratedSite = false,
-}: ProtectedLayoutProps) {
+export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <div className="min-h-screen bg-[#FAFAF8] relative overflow-hidden">
       {/* Decorative gradient lines */}
@@ -23,7 +19,7 @@ export default function ProtectedLayout({
       <div className="absolute bottom-20 left-20 w-96 h-96 bg-linear-to-br from-orange-100/20 to-yellow-100/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Sidebar */}
-      <Sidebar hasGeneratedSite={hasGeneratedSite} />
+      <Sidebar />
 
       {/* Main Content */}
       <main className="ml-64 min-h-screen relative z-10">
