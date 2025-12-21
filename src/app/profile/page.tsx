@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { FullProfileData, GeneratedWebsite } from "@/types/instagram";
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Spinner from "@/components/ui/Spinner";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -12,7 +13,7 @@ import RawDataToggle from "@/components/profile/RawDataToggle";
 function ProfileContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const tokenFromUrl = searchParams.get("token");
 
   const [profileData, setProfileData] = useState<FullProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,12 +22,34 @@ function ProfileContent() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
-  // Redirect if no token
+  // Check if user has generated site
+  const [hasGeneratedSite, setHasGeneratedSite] = useState(false);
+
+  // Get token from URL or sessionStorage
+  const [token, setToken] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!token) {
-      router.push("/?error=" + encodeURIComponent("No authentication token"));
+    const stored = sessionStorage.getItem("generatedSite");
+    setHasGeneratedSite(!!stored);
+  }, []);
+
+  // Save token to sessionStorage and retrieve it
+  useEffect(() => {
+    if (tokenFromUrl) {
+      // Save token from URL to sessionStorage
+      sessionStorage.setItem("instagram_token", tokenFromUrl);
+      setToken(tokenFromUrl);
+    } else {
+      // Try to get token from sessionStorage
+      const storedToken = sessionStorage.getItem("instagram_token");
+      if (storedToken) {
+        setToken(storedToken);
+      } else {
+        // No token available, redirect to home
+        router.push("/?error=" + encodeURIComponent("No authentication token"));
+      }
     }
-  }, [token, router]);
+  }, [tokenFromUrl, router]);
 
   // Fetch profile data
   useEffect(() => {
@@ -90,15 +113,26 @@ function ProfileContent() {
   }
 
   if (loading) {
-    return <Spinner size="md" message="Cargando datos de Instagram..." />;
+    return (
+      <ProtectedLayout hasGeneratedSite={hasGeneratedSite}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner size="md" message="Cargando datos de Instagram..." />
+        </div>
+      </ProtectedLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <div className="max-w-6xl w-full">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          Instagram Web Generator
-        </h1>
+    <ProtectedLayout hasGeneratedSite={hasGeneratedSite}>
+      <div className="p-8 max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">
+            Tu Perfil
+          </h1>
+          <p className="text-gray-500 font-light">
+            Información de tu cuenta de Instagram
+          </p>
+        </div>
 
         {fetchError && (
           <div className="mb-6">
@@ -119,17 +153,21 @@ function ProfileContent() {
               mediaCount={profileData.media.length}
             />
 
-            <div className="text-center">
+            <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200/50">
+              <h3 className="text-xl font-light text-gray-800 mb-4">
+                ¿Listo para generar tu web?
+              </h3>
               <Button
                 variant="green-teal"
                 onClick={handleGenerateWebsite}
                 disabled={generating}
                 loading={generating}
+                className="shadow-lg hover:shadow-xl"
               >
                 {generating ? "Generando con IA..." : "Generar mi Web"}
               </Button>
               {generating && (
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-4 text-sm text-gray-500 font-light">
                   Esto puede tardar hasta 1 minuto...
                 </p>
               )}
@@ -145,7 +183,7 @@ function ProfileContent() {
           </div>
         )}
       </div>
-    </div>
+    </ProtectedLayout>
   );
 }
 
