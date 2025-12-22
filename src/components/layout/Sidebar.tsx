@@ -83,8 +83,8 @@ export default function Sidebar() {
               key={item.path}
               href={isDisabled ? "#" : item.path}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative group
-                ${isCollapsed ? 'justify-center' : ''}
+                flex items-center py-3 rounded-lg transition-all duration-200 relative group
+                ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-4'}
                 ${isActive && !isDisabled
                   ? "bg-linear-to-r from-purple-50 to-pink-50 text-purple-700 font-medium shadow-sm"
                   : isDisabled
@@ -95,10 +95,10 @@ export default function Sidebar() {
               onClick={(e) => isDisabled && e.preventDefault()}
               title={isCollapsed ? item.name : undefined}
             >
-              <span className={isActive && !isDisabled ? "text-purple-600" : ""}>
+              <span className={`shrink-0 ${isActive && !isDisabled ? "text-purple-600" : ""}`}>
                 {item.icon}
               </span>
-              <span className={`transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+              <span className={`transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
                 {item.name}
               </span>
               {isDisabled && !isCollapsed && (
@@ -125,13 +125,13 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-200/50">
         <Link
           href="/"
-          className={`flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors group relative ${isCollapsed ? 'justify-center' : ''}`}
+          className={`flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors group relative ${isCollapsed ? 'justify-center' : 'gap-2'}`}
           title={isCollapsed ? "Volver al inicio" : undefined}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span className={`transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+          <span className={`transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
             Volver al inicio
           </span>
 
