@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
+    "@supabase/supabase-js": "^2.89.0",
     "@vercel/sdk": "^1.18.5",
     "next": "16.1.0",
     "openai": "^6.15.0",
