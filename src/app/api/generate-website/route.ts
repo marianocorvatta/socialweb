@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { 
-  InstagramProfile, 
-  InstagramMedia, 
+import {
+  InstagramProfile,
+  InstagramMedia,
   AnalyzedProfile,
-  BusinessCategory 
+  BusinessCategory
 } from "@/types/instagram";
-import { 
-  CATEGORY_CONFIGS, 
-  detectCategory, 
-  getCategoryAnalysisPrompt 
+import {
+  CATEGORY_CONFIGS,
+  detectCategory,
+  getCategoryAnalysisPrompt
 } from "@/config/categories";
+import { getTemplatePrompt } from "@/config/templates";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -123,108 +124,15 @@ async function generateHTML(
     .map((m, i) => `${i + 1}. URL: ${getDirectUrl(m.media_url)} | Link: ${m.permalink}`)
     .join("\n");
 
-  const htmlPrompt = `Genera una landing page HTML de ALTA CALIDAD para un portfolio profesional.
-
-DATOS DEL PERFIL:
-${JSON.stringify(analyzedProfile, null, 2)}
-
-DATOS DE INSTAGRAM:
-- Nombre: ${profile.name || profile.username}
-- Username: @${profile.username}
-- Foto de perfil: ${profilePicUrl}
-- Instagram: https://instagram.com/${profile.username}
-- Seguidores: ${profile.followers_count || "N/A"}
-- Posts: ${profile.media_count || "N/A"}
-
-IMAGEN PARA HERO (usar como background):
-${heroImageUrl}
-
-IMÁGENES PARA GALERÍA (usar estas URLs exactas con sus links):
-${galleryList}
-
-REQUISITOS DE DISEÑO OBLIGATORIOS:
-
-1. ESTÉTICA MODERNA 2025:
-   - Diseño minimalista y elegante tipo Squarespace/Wix premium
-   - Espaciado generoso (mucho white space)
-   - Bordes redondeados sutiles (border-radius: 12-20px)
-   - Sombras suaves (box-shadow con blur alto y opacidad baja)
-   - Transiciones CSS en hover (transform, opacity)
-
-2. PALETA DE COLORES:
-   - Fondo principal: #fafafa o similar (off-white)
-   - Texto principal: #1a1a1a (casi negro)
-   - Texto secundario: #666666
-   - Acento: elegir UN color que combine con el estilo "${analyzedProfile.style}"
-   - Usar el color acento solo en CTAs y detalles pequeños
-
-3. TIPOGRAFÍA:
-   - Importar Google Fonts: 'poppins' para texto, 'poppins' para títulos
-   - Títulos: font-weight 600-700, tamaño grande (2.5-4rem)
-   - Cuerpo: font-weight 400, tamaño 1rem-1.125rem, line-height 1.6
-
-4. ESTRUCTURA DE SECCIONES:
-
-   HERO (100vh altura):
-   - Imagen de fondo usando la URL del hero proporcionada con overlay oscuro semitransparente (rgba(0,0,0,0.4))
-   - Nombre grande centrado en blanco
-   - Tagline debajo
-   - Flecha animada indicando scroll (usar CSS animation) centrada en el medio del viewport
-
-   SOBRE MÍ:
-   - Layout de dos columnas en desktop (foto perfil a la izquierda, texto a la derecha)
-   - Foto de perfil circular grande (200px) con borde sutil
-   - Bio completa del perfil analizado
-   - Badges/pills con las ubicaciones: ${analyzedProfile.locations.join(", ")}
-   - Mostrar seguidores y posts como social proof
-
-   SERVICIOS:
-   - Grid de 3 columnas en desktop, 1 en mobile
-   - Cada servicio en una card con emoji como ícono
-   - Hover effect sutil (translateY -5px, shadow más grande)
-
-   GALERÍA/PORTFOLIO:
-   - Título "Portfolio" o "Mis Trabajos"
-   - Grid de 3 columnas (máximo 9 imágenes)
-   - Imágenes cuadradas con aspect-ratio: 1 y object-fit: cover
-   - Hover: scale(1.03) y overlay semitransparente con ícono
-   - Cada imagen es un link <a> al permalink de Instagram correspondiente
-
-   CONTACTO/CTA:
-   - Sección con fondo del color acento
-   - Texto blanco centrado
-   - Botón grande "Sígueme en Instagram" que va a https://instagram.com/${profile.username}
-
-   FOOTER:
-   - Simple, fondo oscuro (#1a1a1a), texto gris claro
-   - Copyright con el nombre con año 2025
-   - Link a Instagram
-
-5. RESPONSIVE:
-   - Mobile first con breakpoints en 768px y 1024px
-   - En mobile: una columna, galería en grid de 3 columnas más pequeño
-   - Padding menor en mobile (1rem vs 4rem)
-
-6. CSS ESPECIAL:
-   - html { scroll-behavior: smooth; }
-   - Todas las imágenes con loading="lazy"
-   - Imágenes de galería: aspect-ratio: 1; object-fit: cover;
-   - Transiciones suaves: transition: all 0.3s ease;
-
-7. META TAGS SEO:
-   - <title>${analyzedProfile.business_name} | ${analyzedProfile.category}</title>
-   - Meta description con la bio
-   - Keywords: ${analyzedProfile.keywords_seo.join(", ")}
-   - Open Graph completo (og:title, og:description, og:image)
-
-IMPORTANTE:
-- Usa EXACTAMENTE las URLs de imágenes proporcionadas, no las modifiques
-- El HTML debe empezar con <!DOCTYPE html> y terminar con </html>
-- No incluyas JavaScript, solo HTML y CSS
-- Todo el CSS debe estar en un <style> tag dentro del <head>
-
-RESPONDE ÚNICAMENTE CON EL CÓDIGO HTML COMPLETO.
-No incluyas explicaciones, comentarios ni markdown.`;
+  // Get category-specific prompt template
+  const htmlPrompt = getTemplatePrompt(
+    analyzedProfile,
+    profile,
+    media,
+    galleryList,
+    heroImageUrl,
+    profilePicUrl
+  );
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
