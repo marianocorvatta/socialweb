@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -62,8 +63,11 @@ function ProfileContent() {
   }, [profileData, checkExistingSite]);
 
   // If existing site found, redirect to generate page with existing HTML
+  // Only redirect if we don't already have a generated site in store
   useEffect(() => {
-    if (existingSite && profileData) {
+    const { generatedSite } = useInstagramStore.getState();
+
+    if (existingSite && profileData && !generatedSite) {
       // Set the existing site as generated site so it shows in preview
       useInstagramStore.getState().setGeneratedSite({
         generated_html: existingSite.html,

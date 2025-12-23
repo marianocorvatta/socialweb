@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSite, generateUniqueSlug, getSiteByInstagramUserId, updateSite } from '@/lib/sites';
-import { addVercelSubdomain } from '@/lib/vercel';
+import { findAvailableSubdomain } from '@/lib/vercel';
 import type { AnalyzedProfile } from '@/types/instagram';
 
 interface CreateSiteRequestBody {
@@ -38,27 +38,58 @@ export async function POST(request: NextRequest) {
       const existingSite = await getSiteByInstagramUserId(instagram_user_id);
 
       if (existingSite) {
-        // Update existing site (reuse existing subdomain)
-        site = await updateSite(existingSite.slug, {
-          html,
-          business_name: analyzed_profile.business_name,
-          category: analyzed_profile.category,
-          tagline: analyzed_profile.tagline,
-          bio: analyzed_profile.bio,
-        });
-        subdomain = existingSite.subdomain || undefined;
+        // Update existing site - only change subdomain if business name actually changed
+        const businessNameChanged = analyzed_profile.business_name !== existingSite.business_name;
+
+        if (businessNameChanged) {
+          // Business name changed - need new subdomain
+          const newSlug = await generateUniqueSlug(analyzed_profile.business_name);
+          const availableSubdomain = await findAvailableSubdomain(newSlug);
+
+          if (!availableSubdomain) {
+            return NextResponse.json(
+              { error: 'Could not find an available subdomain for the new business name.' },
+              { status: 409 }
+            );
+          }
+
+          subdomain = availableSubdomain;
+
+          // Update with new subdomain
+          site = await updateSite(existingSite.slug, {
+            html,
+            business_name: analyzed_profile.business_name,
+            category: analyzed_profile.category,
+            tagline: analyzed_profile.tagline,
+            bio: analyzed_profile.bio,
+            subdomain,
+          });
+        } else {
+          // Business name didn't change - reuse existing subdomain
+          site = await updateSite(existingSite.slug, {
+            html,
+            business_name: analyzed_profile.business_name,
+            category: analyzed_profile.category,
+            tagline: analyzed_profile.tagline,
+            bio: analyzed_profile.bio,
+          });
+          subdomain = existingSite.subdomain || undefined;
+        }
       } else {
         // Create new site with new subdomain
         const slug = await generateUniqueSlug(analyzed_profile.business_name);
-        subdomain = slug; // Use slug as subdomain
 
-        // Add subdomain to Vercel
-        try {
-          await addVercelSubdomain(subdomain);
-        } catch (error) {
-          console.error('Failed to add Vercel subdomain:', error);
-          // Continue anyway - subdomain might already exist
+        // Find an available subdomain (tries slug, slug-1, slug-2, etc.)
+        const availableSubdomain = await findAvailableSubdomain(slug);
+
+        if (!availableSubdomain) {
+          return NextResponse.json(
+            { error: 'Could not find an available subdomain. Please try a different business name.' },
+            { status: 409 }
+          );
         }
+
+        subdomain = availableSubdomain;
 
         site = await createSite({
           slug,
@@ -75,15 +106,18 @@ export async function POST(request: NextRequest) {
     } else {
       // No instagram_user_id, create new site
       const slug = await generateUniqueSlug(analyzed_profile.business_name);
-      subdomain = slug; // Use slug as subdomain
 
-      // Add subdomain to Vercel
-      try {
-        await addVercelSubdomain(subdomain);
-      } catch (error) {
-        console.error('Failed to add Vercel subdomain:', error);
-        // Continue anyway - subdomain might already exist
+      // Find an available subdomain (tries slug, slug-1, slug-2, etc.)
+      const availableSubdomain = await findAvailableSubdomain(slug);
+
+      if (!availableSubdomain) {
+        return NextResponse.json(
+          { error: 'Could not find an available subdomain. Please try a different business name.' },
+          { status: 409 }
+        );
       }
+
+      subdomain = availableSubdomain;
 
       site = await createSite({
         slug,

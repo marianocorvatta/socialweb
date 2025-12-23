@@ -64,7 +64,7 @@ export default function GeneratePage() {
     setPublishedUrl(null);
 
     try {
-      // Create site in Supabase
+      // Create/update site in Supabase
       const response = await fetch("/api/sites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,9 +81,25 @@ export default function GeneratePage() {
       if (data.error) {
         setPublishError(data.error);
       } else if (data.success && data.site) {
-        const successMsg = `¡Sitio publicado exitosamente!\n\nSlug: ${data.site.slug}`;
+        const successMsg = isExistingSite
+          ? `¡Sitio actualizado exitosamente!\n\nSlug: ${data.site.slug}`
+          : `¡Sitio publicado exitosamente!\n\nSlug: ${data.site.slug}`;
         setPublishSuccess(successMsg);
         setPublishedUrl(data.site.url);
+
+        // Update existingSite in store with new data
+        const updatedExistingSite = {
+          id: data.site.id,
+          slug: data.site.slug,
+          subdomain: data.site.subdomain,
+          url: data.site.url,
+          html: generatedSite.generated_html,
+          business_name: data.site.business_name,
+          category: data.site.category,
+          created_at: data.site.created_at,
+          is_published: true,
+        };
+        useInstagramStore.getState().setExistingSite(updatedExistingSite);
       }
 
       // Commented out GitHub/Vercel publishing

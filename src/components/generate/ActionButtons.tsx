@@ -133,12 +133,42 @@ export default function ActionButtons({
           Descargar HTML
         </button>
 
-        {isExistingSite ? (
+        <button
+          onClick={onPublish}
+          disabled={publishing}
+          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {publishing ? (
+            <>
+              <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+              {isExistingSite ? 'Actualizando...' : 'Publicando...'}
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              {isExistingSite ? 'Actualizar sitio' : 'Publicar'}
+            </>
+          )}
+        </button>
+
+        {isExistingSite && siteUrl && (
           <a
-            href={siteUrl || '#'}
+            href={siteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
           >
             <svg
               className="w-4 h-4"
@@ -155,36 +185,6 @@ export default function ActionButtons({
             </svg>
             Ver sitio publicado
           </a>
-        ) : (
-          <button
-            onClick={onPublish}
-            disabled={publishing}
-            className="bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {publishing ? (
-              <>
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                Publicando...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                Publicar
-              </>
-            )}
-          </button>
         )}
       </div>
     </div>

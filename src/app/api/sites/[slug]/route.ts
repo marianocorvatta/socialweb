@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiteBySlug } from '@/lib/sites';
+import { getSiteBySlug, getSiteBySubdomain } from '@/lib/sites';
 
 interface RouteParams {
   params: Promise<{
@@ -15,7 +15,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
 
-    const site = await getSiteBySlug(slug);
+    // Try to find by subdomain first (for requests like workitout-2.vercel.app)
+    // If not found, fallback to slug (for requests like /sitio/workitout)
+    let site = await getSiteBySubdomain(slug);
+
+    if (!site) {
+      site = await getSiteBySlug(slug);
+    }
 
     if (!site) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
