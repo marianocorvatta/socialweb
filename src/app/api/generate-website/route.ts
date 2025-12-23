@@ -17,10 +17,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-function getDirectUrl(originalUrl: string | null): string {
-  // Use Instagram URLs directly - they work fine in <img> tags
-  // CORS only affects fetch/XHR, not image loading
-  return originalUrl || "";
+function getProxiedUrl(originalUrl: string | null): string {
+  if (!originalUrl) return "";
+
+  // Use our proxy endpoint to serve Instagram images
+  // This fixes the "Bad URL hash" error from Instagram CDN
+  const encodedUrl = encodeURIComponent(originalUrl);
+  return `/api/proxy-image?url=${encodedUrl}`;
 }
 
 async function analyzeProfile(
@@ -64,9 +67,9 @@ ${mediaDescriptions}
 
 Genera un JSON con esta estructura exacta:
 {
-  "business_name": "nombre del negocio o nombre artístico",
+  "business_name": "${profile.name || profile.username}",
   "tagline": "frase corta que describe lo que hace (máximo 10 palabras)",
-  "bio": "descripción profesional de 2-3 oraciones",
+  "bio": "descripción profesional de 2-3 oraciones basada en la bio y contenido",
   "keywords_seo": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "locations": ["ubicación 1", "ubicación 2"],
   "style": "descripción del estilo visual/artístico en una oración",
@@ -75,7 +78,8 @@ Genera un JSON con esta estructura exacta:
 ${categoryFieldsExample}
 }
 
-IMPORTANTE: 
+IMPORTANTE:
+- El campo "business_name" DEBE ser exactamente "${profile.name || profile.username}" - NO lo modifiques ni inventes otro nombre.
 - El campo "category" debe ser exactamente uno de los valores especificados en inglés.
 - Basándote en el análisis, este perfil parece ser de tipo: ${categoryConfig.displayName}
 - Incluye los campos adicionales específicos para esta categoría como se muestra arriba.`;
@@ -97,7 +101,13 @@ IMPORTANTE:
     .trim();
 
   const parsed = JSON.parse(cleanedResponse);
-  
+
+  // Force business_name to be the actual profile name
+  const correctName = profile.name || profile.username || '';
+  if (parsed.business_name !== correctName) {
+    parsed.business_name = correctName;
+  }
+
   // Validate category - if invalid, use our detected category
   if (!Object.values(BusinessCategory).includes(parsed.category)) {
     console.warn(`Invalid category returned by AI: ${parsed.category}, using detected: ${detectedCategory}`);
@@ -117,11 +127,11 @@ async function generateHTML(
     .filter((m) => m.media_url && (m.media_type === "IMAGE" || m.media_type === "CAROUSEL_ALBUM"))
     .slice(0, 9);
 
-  const profilePicUrl = getDirectUrl(profile.profile_picture_url);
-  const heroImageUrl = galleryImages[0] ? getDirectUrl(galleryImages[0].media_url) : "";
+  const profilePicUrl = getProxiedUrl(profile.profile_picture_url);
+  const heroImageUrl = galleryImages[0] ? getProxiedUrl(galleryImages[0].media_url) : "";
 
   const galleryList = galleryImages
-    .map((m, i) => `${i + 1}. URL: ${getDirectUrl(m.media_url)} | Link: ${m.permalink}`)
+    .map((m, i) => `${i + 1}. URL: ${getProxiedUrl(m.media_url)} | Link: ${m.permalink}`)
     .join("\n");
 
   // Get category-specific prompt template
