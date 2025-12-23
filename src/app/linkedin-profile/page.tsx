@@ -16,10 +16,7 @@ interface LinkedInProfile {
   email: string;
   email_verified: boolean;
   picture: string;
-  locale: {
-    country: string;
-    language: string;
-  } | string;
+  locale: string;
 }
 
 function LinkedInProfileContent() {
@@ -141,12 +138,7 @@ function LinkedInProfileContent() {
                     </div>
                     <div>
                       <span className="text-gray-500">Idioma:</span>
-                      <p className="font-medium">
-                        {typeof profileData.locale === 'string'
-                          ? profileData.locale
-                          : `${profileData.locale.language}-${profileData.locale.country}`
-                        }
-                      </p>
+                      <p className="font-medium">{profileData.locale}</p>
                     </div>
                   </div>
                 </div>
