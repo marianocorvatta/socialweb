@@ -62,7 +62,7 @@ export default function GeneratePage() {
         body: JSON.stringify({
           html: generatedSite.generated_html,
           instagram_username: profileData.profile.username,
-          instagram_user_id: profileData.profile.id,
+          instagram_user_id: profileData.profile.user_id,
           analyzed_profile: generatedSite.analyzed_profile,
         }),
       });
