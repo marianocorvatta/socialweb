@@ -25,9 +25,11 @@ function ProfileContent() {
   const {
     token,
     profileData,
+    existingSite,
     isLoadingProfile,
     setToken,
     refreshProfile,
+    checkExistingSite,
   } = useInstagramStore();
 
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -51,6 +53,37 @@ function ProfileContent() {
       });
     }
   }, [token, profileData, isLoadingProfile, refreshProfile]);
+
+  // Check for existing site when profile data is loaded
+  useEffect(() => {
+    if (profileData?.profile?.user_id) {
+      checkExistingSite(profileData.profile.user_id);
+    }
+  }, [profileData, checkExistingSite]);
+
+  // If existing site found, redirect to generate page with existing HTML
+  useEffect(() => {
+    if (existingSite && profileData) {
+      // Set the existing site as generated site so it shows in preview
+      useInstagramStore.getState().setGeneratedSite({
+        generated_html: existingSite.html,
+        generated_at: existingSite.created_at,
+        analyzed_profile: {
+          business_name: existingSite.business_name || profileData.profile.username,
+          category: (existingSite.category || 'OTHER') as any,
+          tagline: '',
+          bio: profileData.profile.biography || '',
+          locations: [],
+          services: [],
+          keywords_seo: [],
+          style: '',
+          target_audience: '',
+        } as any,
+      });
+      // Navigate to generate page
+      router.push("/generate");
+    }
+  }, [existingSite, profileData, router]);
 
   const handleGenerateWebsite = async () => {
     if (!profileData) return;

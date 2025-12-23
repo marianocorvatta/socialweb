@@ -17,12 +17,16 @@ export default function GeneratePage() {
   const router = useRouter();
 
   // Zustand store
-  const { profileData, generatedSite, clearAll } = useInstagramStore();
+  const { profileData, generatedSite, existingSite, clearAll } = useInstagramStore();
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+
+  // Check if this is an existing published site
+  const isExistingSite = existingSite !== null;
+  const siteUrl = existingSite?.url || publishedUrl;
 
   // Redirect if no generated site
   useEffect(() => {
@@ -151,6 +155,8 @@ export default function GeneratePage() {
           onPublish={handlePublish}
           publishing={publishing}
           publishedUrl={publishedUrl}
+          isExistingSite={isExistingSite}
+          existingSiteUrl={siteUrl || undefined}
         />
       </>
     );
@@ -185,6 +191,8 @@ export default function GeneratePage() {
                 publishSuccess={publishSuccess}
                 publishError={publishError}
                 publishedUrl={publishedUrl}
+                isExistingSite={isExistingSite}
+                existingSiteUrl={siteUrl || undefined}
               />
             </div>
             <BrowserPreview
