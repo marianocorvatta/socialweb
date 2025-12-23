@@ -8,40 +8,65 @@ export function generateEcommercePrompt(
   heroImageUrl: string,
   profilePicUrl: string
 ): string {
-  return `Genera una landing page HTML de ALTA CALIDAD para una TIENDA/E-COMMERCE.
+  const isSpanish = /[áéíóúñ¿¡]/.test(profile.biography || '') ||
+                    /(tienda|envío|pedidos|compra|productos)/i.test(profile.biography || '');
 
-DATOS DEL PERFIL:
-${JSON.stringify(analyzed, null, 2)}
+  return `Genera una landing page HTML ELEGANTE para una tienda online.
 
-DATOS DE INSTAGRAM:
-- Nombre: ${profile.name || profile.username}
-- Username: @${profile.username}
-- Instagram: https://instagram.com/${profile.username}
+REGLAS CRÍTICAS:
+1. TODO el texto en ${isSpanish ? 'ESPAÑOL' : 'el mismo idioma del perfil'}
+2. NO inventes precios, productos, ni descripciones
+3. NO uses placeholders como "Descripción del producto"
+4. SOLO usa la información proporcionada
 
-IMAGEN HERO: ${heroImageUrl}
-IMÁGENES DE PRODUCTOS: ${galleryList}
+DATOS REALES:
+- Nombre: ${analyzed.business_name}
+- Tagline: ${analyzed.tagline}
+- Bio: ${analyzed.bio}
+- Instagram: @${profile.username}
+- Seguidores: ${profile.followers_count || 'N/A'}
 
-SECCIONES ESPECÍFICAS PARA E-COMMERCE:
+IMÁGENES:
+- Hero: ${heroImageUrl}
+- Productos:
+${galleryList}
 
-HERO: Producto destacado o colección, nombre de tienda "${analyzed.business_name}", botón "Shop Now" a Instagram
+ESTRUCTURA:
 
-SOBRE LA TIENDA: Bio "${analyzed.bio}", categorías: ${analyzed.product_categories.join(', ')}
+1. HERO:
+   - Imagen de fondo: ${heroImageUrl}
+   - Nombre: "${analyzed.business_name}"
+   - Tagline: "${analyzed.tagline}"
+   - Botón: "${isSpanish ? 'Ver Productos' : 'Shop Now'}"
 
-PRODUCTOS DESTACADOS:
-- Grid de productos
-- Destacar: ${analyzed.featured_products.map(p => `"${p}"`).join(', ')}
-- Cada producto enlaza a Instagram
+2. SOBRE NOSOTROS:
+   - Bio: "${analyzed.bio}"
+   - Link a Instagram
 
-CATEGORÍAS: Pills/badges para ${analyzed.product_categories.join(', ')}
+3. PRODUCTOS (grid visual):
+   - Mostrar las imágenes proporcionadas
+   - Sin precios ni descripciones inventadas
+   - Cada imagen enlaza a Instagram
+   - Hover elegante
 
-INFO DE ENVÍO: "${analyzed.shipping_info}"
+4. CTA:
+   - "${isSpanish ? 'Compra en Instagram' : 'Shop on Instagram'}"
+   - Botón a: https://instagram.com/${profile.username}
 
-CTA: "Shop en Instagram" → https://instagram.com/${profile.username}
+5. FOOTER:
+   - © ${analyzed.business_name} 2025
 
-DISEÑO: Moderno, clean, enfocado en productos. Colores que reflejen la marca.
+ESTILO:
+- Minimalista y moderno
+- Tipografía: 'Inter' para todo
+- Productos como protagonistas
+- Mobile responsive
 
-Meta title: ${analyzed.business_name} | Online Shop
-Keywords: ${analyzed.keywords_seo.join(', ')}
+TÉCNICO:
+- <!DOCTYPE html>
+- CSS en <style>
+- loading="lazy"
+- NO JavaScript
 
-Responde solo con HTML completo, sin explicaciones.`;
+RESPONDE SOLO CON HTML.`;
 }
