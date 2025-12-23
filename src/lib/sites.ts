@@ -27,6 +27,10 @@ function slugify(text: string): string {
  * If slug exists, append -2, -3, etc.
  */
 export async function generateUniqueSlug(baseName: string): Promise<string> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const baseSlug = slugify(baseName);
 
   if (!baseSlug) {
@@ -64,6 +68,10 @@ export async function generateUniqueSlug(baseName: string): Promise<string> {
  * Create a new site
  */
 export async function createSite(input: CreateSiteInput): Promise<Site> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const { data, error } = await supabaseAdmin
     .from('sites')
     .insert({
@@ -91,6 +99,10 @@ export async function createSite(input: CreateSiteInput): Promise<Site> {
  * Get site by slug
  */
 export async function getSiteBySlug(slug: string): Promise<Site | null> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const { data, error } = await supabaseAdmin
     .from('sites')
     .select('*')
@@ -113,6 +125,10 @@ export async function getSiteBySlug(slug: string): Promise<Site | null> {
  * Get site by custom domain
  */
 export async function getSiteByDomain(domain: string): Promise<Site | null> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const { data, error } = await supabaseAdmin
     .from('sites')
     .select('*')
@@ -135,6 +151,10 @@ export async function getSiteByDomain(domain: string): Promise<Site | null> {
  * Update site by slug
  */
 export async function updateSite(slug: string, input: UpdateSiteInput): Promise<Site> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -165,6 +185,10 @@ export async function updateSite(slug: string, input: UpdateSiteInput): Promise<
  * Delete site by slug
  */
 export async function deleteSite(slug: string): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
   const { error } = await supabaseAdmin
     .from('sites')
     .delete()
