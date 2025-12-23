@@ -46,7 +46,7 @@ ESTRUCTURA DE LA PÁGINA (solo 4 secciones):
    - Botón elegante "Ver más" que hace scroll suave
 
 2. SOBRE NOSOTROS:
-   - Foto de perfil circular
+   - Foto de perfil circular CENTRADA (usa margin: 0 auto; display: block; o text-align: center en el padre)
    - Texto: "${analyzed.bio}"
    - Ubicación si está disponible: ${analyzed.locations.join(', ') || 'No especificada'}
    - Badges con: @${profile.username} y cantidad de seguidores

@@ -42,7 +42,7 @@ ESTRUCTURA (solo estas secciones):
    - Tagline: "${analyzed.tagline}"
 
 2. SOBRE:
-   - Foto de perfil circular
+   - Foto de perfil circular CENTRADA (usa margin: 0 auto; display: block; o text-align: center en el padre)
    - Bio: "${analyzed.bio}"
    - Ubicación
    - Link a Instagram con seguidores
