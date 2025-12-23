@@ -1,5 +1,6 @@
 import ConnectButton from "@/components/landing/ConnectButton";
 import Alert from "@/components/ui/Alert";
+import MobileLoginView from "@/components/mobile/MobileLoginView";
 
 interface HomeProps {
   searchParams: Promise<{ error?: string }>;
@@ -15,7 +16,14 @@ export default async function Home({ searchParams }: HomeProps) {
   const error = params.error;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+    <>
+      {/* Vista Mobile */}
+      <div className="md:hidden">
+        <MobileLoginView error={error} />
+      </div>
+
+      {/* Vista Desktop */}
+      <div className="hidden md:flex min-h-screen bg-[#FAFAF8] flex-col items-center justify-center p-8 relative overflow-hidden">
       {/* Decorative gradient lines */}
       <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-purple-200 to-transparent opacity-60" />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-pink-200 to-transparent opacity-60" />
@@ -79,6 +87,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

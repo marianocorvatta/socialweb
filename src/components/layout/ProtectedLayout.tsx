@@ -36,11 +36,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         <div className="absolute top-20 right-20 w-96 h-96 bg-linear-to-br from-purple-100/30 to-pink-100/30 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-linear-to-br from-orange-100/20 to-yellow-100/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Sidebar - oculto en mobile */}
+        <div className="hidden md:block">
+          <Sidebar />
+        </div>
 
-        {/* Main Content */}
-        <main className={`min-h-screen relative z-10 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+        {/* Main Content - sin margen en mobile */}
+        <main className={`min-h-screen relative z-10 transition-all duration-300 ml-0 md:${isCollapsed ? 'ml-20' : 'ml-64'}`}>
           {children}
         </main>
       </div>

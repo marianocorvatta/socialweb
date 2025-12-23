@@ -5,3 +5,54 @@ body {
   color: #111827;
   font-family: system-ui, sans-serif;
 }
+
+/* Animaciones para flujo móvil con estética Instagram */
+
+/* Animación de rotación del gradiente (loader border) */
+@keyframes rotate-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Shimmer/destello sobre el gradiente */
+@keyframes shimmer {
+  0%, 90%, 100% {
+    opacity: 0;
+  }
+  45%, 55% {
+    opacity: 1;
+  }
+}
+
+/* Entrada del botón flotante (slide-up + fade-in) */
+@keyframes slide-up-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Clases de utilidad para aplicar las animaciones */
+.animate-rotate-gradient {
+  background-size: 200% 200%;
+  animation: rotate-gradient 3s ease infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 5s ease-in-out infinite;
+}
+
+.animate-entrance {
+  animation: slide-up-fade-in 0.3s ease-out forwards;
+}

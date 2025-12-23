@@ -9,9 +9,14 @@ import Spinner from "@/components/ui/Spinner";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import ProfileCard from "@/components/profile/ProfileCard";
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import ProgressDots from "@/components/mobile/ProgressDots";
+import InstagramGradientLoader from "@/components/mobile/InstagramGradientLoader";
+import MobileProfileView from "@/components/mobile/MobileProfileView";
 // import RawDataToggle from "@/components/profile/RawDataToggle";
 
 function ProfileContent() {
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const router = useRouter();
   const tokenFromUrl = searchParams.get("token");
@@ -96,6 +101,43 @@ function ProfileContent() {
     return null; // Will redirect
   }
 
+  // Vista Mobile
+  if (isMobile) {
+    if (isLoadingProfile && !profileData) {
+      return <InstagramGradientLoader message="Cargando perfil..." />;
+    }
+
+    return (
+      <>
+        <ProgressDots currentStep={2} />
+        {generating && <InstagramGradientLoader message="Generando con IA..." />}
+        {profileData && (
+          <MobileProfileView
+            profile={profileData.profile}
+            mediaCount={profileData.media.length}
+            onGenerate={handleGenerateWebsite}
+            generating={generating}
+          />
+        )}
+        {generateError && (
+          <div className="fixed bottom-6 left-6 right-6 z-50">
+            <Alert variant="error" title="Error al generar">
+              {generateError}
+            </Alert>
+          </div>
+        )}
+        {fetchError && (
+          <div className="fixed top-20 left-6 right-6 z-50">
+            <Alert variant="error" title="Error">
+              {fetchError}
+            </Alert>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Vista Desktop
   if (isLoadingProfile && !profileData) {
     return (
       <ProtectedLayout>

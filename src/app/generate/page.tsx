@@ -7,8 +7,13 @@ import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import AnalyzedProfileCard from "@/components/generate/AnalyzedProfileCard";
 import BrowserPreview from "@/components/generate/BrowserPreview";
 import ActionButtons from "@/components/generate/ActionButtons";
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import ProgressDots from "@/components/mobile/ProgressDots";
+import InstagramGradientLoader from "@/components/mobile/InstagramGradientLoader";
+import MobilePreviewView from "@/components/mobile/MobilePreviewView";
 
 export default function GeneratePage() {
+  const isMobile = useIsMobile();
   const router = useRouter();
 
   // Zustand store
@@ -135,6 +140,23 @@ export default function GeneratePage() {
     return null; // Will redirect
   }
 
+  // Vista Mobile
+  if (isMobile) {
+    return (
+      <>
+        <ProgressDots currentStep={3} />
+        {publishing && <InstagramGradientLoader message="Publicando..." />}
+        <MobilePreviewView
+          html={generatedSite.generated_html}
+          onPublish={handlePublish}
+          publishing={publishing}
+          publishedUrl={publishedUrl}
+        />
+      </>
+    );
+  }
+
+  // Vista Desktop
   return (
     <ProtectedLayout>
       <div className="p-8 max-w-6xl mx-auto">
