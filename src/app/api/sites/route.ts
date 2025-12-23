@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSite, generateUniqueSlug } from '@/lib/sites';
+import { createSite, generateUniqueSlug, getSiteByInstagramUserId, updateSite } from '@/lib/sites';
+import { addVercelSubdomain } from '@/lib/vercel';
 import type { AnalyzedProfile } from '@/types/instagram';
 
 interface CreateSiteRequestBody {
@@ -29,42 +30,101 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique slug
-    const slug = await generateUniqueSlug(analyzed_profile.business_name);
+    // Check if site already exists for this Instagram user ID
+    let site;
+    let subdomain: string | undefined;
 
-    // Create site
-    const site = await createSite({
-      slug,
-      html,
-      instagram_username: instagram_username || undefined,
-      instagram_user_id: instagram_user_id || undefined,
-      business_name: analyzed_profile.business_name,
-      category: analyzed_profile.category,
-      tagline: analyzed_profile.tagline,
-      bio: analyzed_profile.bio,
-    });
+    if (instagram_user_id) {
+      const existingSite = await getSiteByInstagramUserId(instagram_user_id);
 
-    // Build site URL
+      if (existingSite) {
+        // Update existing site (reuse existing subdomain)
+        site = await updateSite(existingSite.slug, {
+          html,
+          business_name: analyzed_profile.business_name,
+          category: analyzed_profile.category,
+          tagline: analyzed_profile.tagline,
+          bio: analyzed_profile.bio,
+        });
+        subdomain = existingSite.subdomain || undefined;
+      } else {
+        // Create new site with new subdomain
+        const slug = await generateUniqueSlug(analyzed_profile.business_name);
+        subdomain = slug; // Use slug as subdomain
+
+        // Add subdomain to Vercel
+        try {
+          await addVercelSubdomain(subdomain);
+        } catch (error) {
+          console.error('Failed to add Vercel subdomain:', error);
+          // Continue anyway - subdomain might already exist
+        }
+
+        site = await createSite({
+          slug,
+          html,
+          instagram_username: instagram_username || undefined,
+          instagram_user_id: instagram_user_id || undefined,
+          business_name: analyzed_profile.business_name,
+          category: analyzed_profile.category,
+          tagline: analyzed_profile.tagline,
+          bio: analyzed_profile.bio,
+          subdomain,
+        });
+      }
+    } else {
+      // No instagram_user_id, create new site
+      const slug = await generateUniqueSlug(analyzed_profile.business_name);
+      subdomain = slug; // Use slug as subdomain
+
+      // Add subdomain to Vercel
+      try {
+        await addVercelSubdomain(subdomain);
+      } catch (error) {
+        console.error('Failed to add Vercel subdomain:', error);
+        // Continue anyway - subdomain might already exist
+      }
+
+      site = await createSite({
+        slug,
+        html,
+        instagram_username: instagram_username || undefined,
+        instagram_user_id: instagram_user_id || undefined,
+        business_name: analyzed_profile.business_name,
+        category: analyzed_profile.category,
+        tagline: analyzed_profile.tagline,
+        bio: analyzed_profile.bio,
+        subdomain,
+      });
+    }
+
+    // Build site URLs
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const siteUrl = `${baseUrl}/sitio/${slug}`;
+    const siteUrl = `${baseUrl}/sitio/${site.slug}`;
+
+    // Use subdomain URL if available
+    const subdomainUrl = subdomain ? `https://${subdomain}.vercel.app` : null;
+    const primaryUrl = subdomainUrl || siteUrl;
 
     return NextResponse.json({
       success: true,
       site: {
         id: site.id,
         slug: site.slug,
-        url: siteUrl,
+        subdomain: site.subdomain,
+        url: primaryUrl,
+        fallback_url: siteUrl,
         business_name: site.business_name,
         category: site.category,
         created_at: site.created_at,
       },
     });
   } catch (err) {
-    console.error('Error creating site:', err);
+    console.error('Error creating/updating site:', err);
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 
     return NextResponse.json(
-      { error: `Failed to create site: ${errorMessage}` },
+      { error: `Failed to create/update site: ${errorMessage}` },
       { status: 500 }
     );
   }

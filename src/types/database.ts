@@ -8,6 +8,7 @@ export interface Site {
   category: string | null;
   tagline: string | null;
   bio: string | null;
+  subdomain: string | null;
   custom_domain: string | null;
   is_published: boolean;
   created_at: string;
@@ -23,6 +24,7 @@ export interface CreateSiteInput {
   category?: string;
   tagline?: string;
   bio?: string;
+  subdomain?: string;
 }
 
 export interface UpdateSiteInput {
@@ -31,6 +33,7 @@ export interface UpdateSiteInput {
   category?: string;
   tagline?: string;
   bio?: string;
+  subdomain?: string;
   custom_domain?: string;
   is_published?: boolean;
 }

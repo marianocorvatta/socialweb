@@ -9,11 +9,12 @@ const CREATE_SITES_TABLE_SQL = `
     slug VARCHAR(100) UNIQUE NOT NULL,
     html TEXT NOT NULL,
     instagram_username VARCHAR(100),
-    instagram_user_id VARCHAR(100),
+    instagram_user_id VARCHAR(100) UNIQUE,
     business_name VARCHAR(255),
     category VARCHAR(100),
     tagline TEXT,
     bio TEXT,
+    subdomain VARCHAR(100) UNIQUE,
     custom_domain VARCHAR(255) UNIQUE,
     is_published BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -22,6 +23,8 @@ const CREATE_SITES_TABLE_SQL = `
 
   CREATE INDEX IF NOT EXISTS idx_sites_slug ON sites(slug);
   CREATE INDEX IF NOT EXISTS idx_sites_custom_domain ON sites(custom_domain);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_instagram_user_id ON sites(instagram_user_id) WHERE instagram_user_id IS NOT NULL;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_subdomain ON sites(subdomain) WHERE subdomain IS NOT NULL;
 `;
 
 /**

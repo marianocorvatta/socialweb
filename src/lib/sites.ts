@@ -83,6 +83,7 @@ export async function createSite(input: CreateSiteInput): Promise<Site> {
       category: input.category || null,
       tagline: input.tagline || null,
       bio: input.bio || null,
+      subdomain: input.subdomain || null,
       is_published: true,
     })
     .select()
@@ -90,6 +91,31 @@ export async function createSite(input: CreateSiteInput): Promise<Site> {
 
   if (error) {
     throw new Error(`Error creating site: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Get site by Instagram user ID
+ */
+export async function getSiteByInstagramUserId(instagramUserId: string): Promise<Site | null> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('sites')
+    .select('*')
+    .eq('instagram_user_id', instagramUserId)
+    .single();
+
+  if (error && error.code === 'PGRST116') {
+    return null;
+  }
+
+  if (error) {
+    throw new Error(`Error fetching site by Instagram user ID: ${error.message}`);
   }
 
   return data;
@@ -116,6 +142,32 @@ export async function getSiteBySlug(slug: string): Promise<Site | null> {
 
   if (error) {
     throw new Error(`Error fetching site: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Get site by subdomain
+ */
+export async function getSiteBySubdomain(subdomain: string): Promise<Site | null> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('sites')
+    .select('*')
+    .eq('subdomain', subdomain)
+    .eq('is_published', true)
+    .single();
+
+  if (error && error.code === 'PGRST116') {
+    return null;
+  }
+
+  if (error) {
+    throw new Error(`Error fetching site by subdomain: ${error.message}`);
   }
 
   return data;
@@ -164,6 +216,7 @@ export async function updateSite(slug: string, input: UpdateSiteInput): Promise<
   if (input.category !== undefined) updateData.category = input.category;
   if (input.tagline !== undefined) updateData.tagline = input.tagline;
   if (input.bio !== undefined) updateData.bio = input.bio;
+  if (input.subdomain !== undefined) updateData.subdomain = input.subdomain;
   if (input.custom_domain !== undefined) updateData.custom_domain = input.custom_domain;
   if (input.is_published !== undefined) updateData.is_published = input.is_published;
 

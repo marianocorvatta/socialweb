@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Initialize Vercel SDK
     const vercel = new Vercel({
-      bearerToken: process.env.VERCEL_TOKEN,
+      bearerToken: process.env.VERCEL_API_TOKEN,
     });
 
     // Configuration for the deployment

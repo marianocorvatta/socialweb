@@ -154,12 +154,12 @@ export async function POST(request: NextRequest) {
     // Trigger Vercel deployment
     let deploymentResult = null;
 
-    if (instagramUsername && process.env.VERCEL_TOKEN) {
+    if (instagramUsername && process.env.VERCEL_API_TOKEN) {
       console.log(`🚀 Starting Vercel deployment for branch: ${branchName}`);
 
       try {
         const vercel = new Vercel({
-          bearerToken: process.env.VERCEL_TOKEN,
+          bearerToken: process.env.VERCEL_API_TOKEN,
         });
 
         const createResponse = await vercel.deployments.createDeployment({
