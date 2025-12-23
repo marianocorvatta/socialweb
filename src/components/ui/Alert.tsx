@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 interface AlertProps {
-  variant: "error" | "success" | "info";
+  variant: "error" | "success";
   title?: string;
   children: ReactNode;
   onRetry?: () => void;
@@ -27,12 +27,6 @@ export default function Alert({
       title: "text-green-800",
       content: "text-green-800",
       button: "text-green-600 hover:text-green-800",
-    },
-    info: {
-      container: "bg-blue-50 border-blue-200",
-      title: "text-blue-800",
-      content: "text-blue-700",
-      button: "text-blue-600 hover:text-blue-800",
     },
   };
 

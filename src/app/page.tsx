@@ -1,5 +1,4 @@
 import ConnectButton from "@/components/landing/ConnectButton";
-import LinkedInConnectButton from "@/components/landing/LinkedInConnectButton";
 import Alert from "@/components/ui/Alert";
 import MobileLoginView from "@/components/mobile/MobileLoginView";
 
@@ -67,14 +66,8 @@ export default async function Home({ searchParams }: HomeProps) {
           </p>
 
           {/* CTA */}
-          <div className="pt-4 flex flex-col items-center gap-4">
+          <div className="pt-4">
             <ConnectButton />
-            <div className="flex items-center gap-3 text-gray-400 text-sm">
-              <div className="h-px w-12 bg-gray-300" />
-              <span>o también</span>
-              <div className="h-px w-12 bg-gray-300" />
-            </div>
-            <LinkedInConnectButton />
           </div>
 
           {/* Subtle feature hints */}
