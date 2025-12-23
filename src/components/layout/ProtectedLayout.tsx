@@ -42,7 +42,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         </div>
 
         {/* Main Content - sin margen en mobile */}
-        <main className={`min-h-screen relative z-10 transition-all duration-300 ml-0 md:${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+        <main className={`min-h-screen relative z-10 transition-all duration-300 ${isCollapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-64'}`}>
           {children}
         </main>
       </div>
