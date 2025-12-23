@@ -55,13 +55,15 @@ export default function GeneratePage() {
     setPublishedUrl(null);
 
     try {
-      const response = await fetch("/api/github/push", {
+      // Create site in Supabase
+      const response = await fetch("/api/sites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          branchName: profileData.profile.username,
-          instagramUsername: profileData.profile.username,
-          templateCode: generatedSite.generated_html,
+          html: generatedSite.generated_html,
+          instagram_username: profileData.profile.username,
+          instagram_user_id: profileData.profile.id,
+          analyzed_profile: generatedSite.analyzed_profile,
         }),
       });
 
@@ -69,25 +71,46 @@ export default function GeneratePage() {
 
       if (data.error) {
         setPublishError(data.error);
-      } else {
-        let successMsg = `¡Publicado exitosamente en la rama ${data.branch}!`;
-
-        if (data.deployment?.success) {
-          successMsg += `\n\n✅ Deployment completado en Vercel`;
-          const url = data.deployment.alias
-            ? `https://${data.deployment.alias}`
-            : data.deployment.deploymentURL
-              ? `https://${data.deployment.deploymentURL}`
-              : null;
-          setPublishedUrl(url);
-        } else if (data.deployment?.error) {
-          successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló:\n${data.deployment.error}`;
-        } else if (data.deployment) {
-          successMsg += `\n\n⚠️ Deployment iniciado pero aún no completado`;
-        }
-
+      } else if (data.success && data.site) {
+        const successMsg = `¡Sitio publicado exitosamente!\n\nSlug: ${data.site.slug}`;
         setPublishSuccess(successMsg);
+        setPublishedUrl(data.site.url);
       }
+
+      // Commented out GitHub/Vercel publishing
+      // const response = await fetch("/api/github/push", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     branchName: profileData.profile.username,
+      //     instagramUsername: profileData.profile.username,
+      //     templateCode: generatedSite.generated_html,
+      //   }),
+      // });
+
+      // const data = await response.json();
+
+      // if (data.error) {
+      //   setPublishError(data.error);
+      // } else {
+      //   let successMsg = `¡Publicado exitosamente en la rama ${data.branch}!`;
+
+      //   if (data.deployment?.success) {
+      //     successMsg += `\n\n✅ Deployment completado en Vercel`;
+      //     const url = data.deployment.alias
+      //       ? `https://${data.deployment.alias}`
+      //       : data.deployment.deploymentURL
+      //         ? `https://${data.deployment.deploymentURL}`
+      //         : null;
+      //     setPublishedUrl(url);
+      //   } else if (data.deployment?.error) {
+      //     successMsg += `\n\n⚠️ Advertencia: El código se publicó en GitHub pero el deployment en Vercel falló:\n${data.deployment.error}`;
+      //   } else if (data.deployment) {
+      //     successMsg += `\n\n⚠️ Deployment iniciado pero aún no completado`;
+      //   }
+
+      //   setPublishSuccess(successMsg);
+      // }
     } catch (err) {
       setPublishError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
