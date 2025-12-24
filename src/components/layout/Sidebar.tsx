@@ -42,11 +42,11 @@ export default function Sidebar() {
         <Link href="/" className="block">
           <div className="relative inline-block">
             <h1 className={`text-3xl font-light tracking-tight text-gray-900 transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}>
-              Winsta
+              Quicksi
             </h1>
             {isCollapsed && (
               <div className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-400 to-orange-400">
-                W
+                Q
               </div>
             )}
             {!isCollapsed && (

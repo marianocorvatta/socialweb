@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Winsta",
-  description: "Generate website from ig",
+  title: "Quicksi",
+  description: "Transforma tu Instagram en sitio web en minutos",
 };
 
 export default function RootLayout({

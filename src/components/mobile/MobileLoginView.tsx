@@ -25,7 +25,7 @@ export default function MobileLoginView({ error }: MobileLoginViewProps) {
         <div className="text-center">
           <div className="inline-block">
             <h1 className="text-6xl font-light tracking-tight text-gray-900 mb-2">
-              Winsta
+              Quicksi
             </h1>
             <div className="h-px bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 rounded-full" />
           </div>

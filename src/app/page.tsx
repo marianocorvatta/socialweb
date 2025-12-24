@@ -7,7 +7,7 @@ interface HomeProps {
 }
 
 export const metadata = {
-  title: "Winsta - Tu Web desde Instagram",
+  title: "Quicksi - Tu Web desde Instagram",
   description: "Transforma tu perfil de Instagram en un sitio web profesional con IA",
 };
 
@@ -46,7 +46,7 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="inline-flex items-center justify-center mb-4">
             <div className="relative">
               <h1 className="text-7xl font-light tracking-tight text-gray-900">
-                Winsta
+                Quicksi
               </h1>
               <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-linear-to-r from-purple-400 via-pink-400 to-orange-400 rounded-full" />
             </div>
