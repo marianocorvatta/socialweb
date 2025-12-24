@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useInstagramStore } from "@/store/useInstagramStore";
-import { useSidebarContext } from "./ProtectedLayout";
+import { useSidebarContext } from "@/app/(protected)/layout";
 
 export default function Sidebar() {
   const { isCollapsed, setIsCollapsed } = useSidebarContext();

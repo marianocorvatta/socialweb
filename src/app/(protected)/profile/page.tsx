@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { GeneratedWebsite } from "@/types/instagram";
 import { useInstagramStore } from "@/store/useInstagramStore";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Spinner from "@/components/ui/Spinner";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -177,17 +176,14 @@ function ProfileContent() {
   // Vista Desktop
   if (isLoadingProfile && !profileData) {
     return (
-      <ProtectedLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Spinner size="md" message="Cargando datos de Instagram..." />
-        </div>
-      </ProtectedLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="md" message="Cargando datos de Instagram..." />
+      </div>
     );
   }
 
   return (
-    <ProtectedLayout>
-      <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-5xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">
@@ -267,8 +263,7 @@ function ProfileContent() {
             {/* <RawDataToggle profileData={profileData} /> */}
           </div>
         )}
-      </div>
-    </ProtectedLayout>
+    </div>
   );
 }
 

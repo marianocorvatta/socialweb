@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useInstagramStore } from "@/store/useInstagramStore";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import AnalyzedProfileCard from "@/components/generate/AnalyzedProfileCard";
 import BrowserPreview from "@/components/generate/BrowserPreview";
 import ActionButtons from "@/components/generate/ActionButtons";
@@ -180,8 +179,7 @@ export default function GeneratePage() {
 
   // Vista Desktop
   return (
-    <ProtectedLayout>
-      <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-light tracking-tight text-gray-900 mb-2">
             Preview de tu Web
@@ -240,7 +238,6 @@ export default function GeneratePage() {
             </button>
           </div>
         </div>
-      </div>
-    </ProtectedLayout>
+    </div>
   );
 }
