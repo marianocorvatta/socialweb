@@ -38,11 +38,12 @@ export async function POST(request: NextRequest) {
       const existingSite = await getSiteByInstagramUserId(instagram_user_id);
 
       if (existingSite) {
-        // Update existing site - only change subdomain if business name actually changed
+        // Check if we need to create/update subdomain
         const businessNameChanged = analyzed_profile.business_name !== existingSite.business_name;
+        const needsSubdomain = !existingSite.subdomain; // Old sites without subdomain
 
-        if (businessNameChanged) {
-          // Business name changed - need new subdomain
+        if (businessNameChanged || needsSubdomain) {
+          // Need new subdomain (either business name changed OR old site without subdomain)
           const newSlug = await generateUniqueSlug(analyzed_profile.business_name);
           const availableSubdomain = await findAvailableSubdomain(newSlug);
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
             subdomain,
           });
         } else {
-          // Business name didn't change - reuse existing subdomain
+          // Business name didn't change and already has subdomain - reuse it
           site = await updateSite(existingSite.slug, {
             html,
             business_name: analyzed_profile.business_name,
